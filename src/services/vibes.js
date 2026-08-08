@@ -66,7 +66,8 @@ export const createVibe = async ({
   caption,
   latitude,
   longitude,
-  locationName = null
+  locationArea = null,
+  locationCity = null
 }) => {
   const { data, error } = await supabase
     .from(VIBE_TABLE)
@@ -77,14 +78,18 @@ export const createVibe = async ({
       media_path: mediaPath,
       thumbnail_path: thumbnailPath,
       caption: caption?.trim() || null,
+
+      // Private exact coordinate
       location: `POINT(${longitude} ${latitude})`,
-      location_name: locationName
+
+      // Public coarse location
+      location_area: locationArea,
+      location_city: locationCity
     })
     .select()
     .single()
 
   if (error) throw error
-
   return data
 }
 
@@ -200,7 +205,8 @@ export const publishVibe = async ({
   caption = '',
   latitude,
   longitude,
-  locationName = null,
+  locationArea = null,
+  locationCity = null,
   interestIds = []
 }) => {
   const vibeId = crypto.randomUUID()
@@ -237,7 +243,8 @@ export const publishVibe = async ({
       caption,
       latitude,
       longitude,
-      locationName
+      locationArea,
+      locationCity
     })
 
     vibeCreated = true

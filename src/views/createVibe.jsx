@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { reverseGeocode } from '../services/geocoding.js'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiCamera, FiMapPin, FiPlus, FiX } from 'react-icons/fi'
 import { publishVibe } from '../services/vibes.js'
@@ -121,6 +122,10 @@ const CreateVibe = ({ onPublished }) => {
         timeout: 10000
       })
 
+      const latitude = position.coords.latitude
+      const longitude = position.coords.longitude
+      const publicLocation = await reverseGeocode(latitude, longitude)
+
       const file = await getPhotoFile()
       const thumbnailFile = await createImageThumbnail(photo.webPath)
 
@@ -130,8 +135,10 @@ const CreateVibe = ({ onPublished }) => {
         thumbnailFile,
         mediaType: 'photo',
         caption,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
+        latitude,
+        longitude,
+        locationArea: publicLocation.area,
+        locationCity: publicLocation.city,
         interestIds: selectedInterests
       })
 

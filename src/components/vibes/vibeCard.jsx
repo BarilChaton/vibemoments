@@ -1,10 +1,5 @@
 import { FiMapPin } from 'react-icons/fi'
-
-const formatDistance = (meters) => {
-  if (meters < 1000) return `${Math.round(meters)} m`
-
-  return `${(meters / 1000).toFixed(1)} km`
-}
+import { formatVibeLocation } from '../../utils/formatVibeLocation.js'
 
 const formatAge = (createdAt) => {
   const seconds = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
@@ -51,7 +46,7 @@ const VibeCard = ({ vibe, onClick }) => {
 
         <div className="mt-1 flex items-center gap-1 text-[11px] text-white/80">
           <FiMapPin />
-          <span>{formatDistance(vibe.distance_meters)}</span>
+          <span className="truncate">{formatVibeLocation(vibe)}</span>
           <span>·</span>
           <span>{formatAge(vibe.created_at)}</span>
         </div>

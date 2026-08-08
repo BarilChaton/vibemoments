@@ -44,7 +44,7 @@ const Home = () => {
     staleTime: 1000 * 30
   })
 
-  const [selectedVibe, setSelectedVibe] = useState(null)
+  const [selectedVibeIndex, setSelectedVibeIndex] = useState(null)
 
   return (
     <div className="flex flex-1 flex-col">
@@ -107,13 +107,15 @@ const Home = () => {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 px-3 pb-8 pt-2">
-          {vibes.map((vibe) => (
-            <VibeCard key={vibe.id} vibe={vibe} onClick={setSelectedVibe} />
+          {vibes.map((vibe, index) => (
+            <VibeCard key={vibe.id} vibe={vibe} onClick={() => setSelectedVibeIndex(index)} />
           ))}
         </div>
       )}
 
-      {selectedVibe && <VibeViewer vibe={selectedVibe} onClose={() => setSelectedVibe(null)} />}
+      {selectedVibeIndex !== null && (
+        <VibeViewer vibes={vibes} initialIndex={selectedVibeIndex} onClose={() => setSelectedVibeIndex(null)} />
+      )}
     </div>
   )
 }

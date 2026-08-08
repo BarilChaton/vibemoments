@@ -8,15 +8,16 @@ import {
   subscribeToVibeReactions,
   unsubscribeFromVibeReactions
 } from '../../services/vibes.js'
+import { formatVibeLocation } from '../../utils/formatVibeLocation.js'
 import useAuthStore from '../../stores/useAuthStore.js'
 
 const REACTIONS = ['❤️', '😂', '🔥', '😍', '👏', '😮']
+const SWIPE_THRESHOLD = 70
+const TRANSITION_DURATION = 280
 
-const formatDistance = (meters) => {
-  if (meters < 1000) return `${Math.round(meters)} m away`
-
-  return `${(meters / 1000).toFixed(1)} km away`
-}
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
 
 const formatAge = (createdAt) => {
   const seconds = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
@@ -43,16 +44,158 @@ const loadVibeDetails = async (vibe) => {
   }
 }
 
-const VibeViewer = ({ vibe, onClose }) => {
-  const { user } = useAuthStore()
+// -----------------------------------------------------------------------------
+// Vibe slide
+// -----------------------------------------------------------------------------
 
-  const [floatingReactions, setFloatingReactions] = useState([])
-
+const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onReaction }) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['vibe-view', vibe.id],
     queryFn: () => loadVibeDetails(vibe),
     staleTime: 1000 * 60 * 5
   })
+
+  const fallbackImage = vibe.media_url || vibe.thumbnail_url || null
+  const imageUrl = data?.mediaUrl || fallbackImage
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-black">
+      {imageUrl && vibe.media_type === 'photo' && <img className="absolute inset-0 h-full w-full object-cover" src={imageUrl} alt="" />}
+
+      {isLoading && !imageUrl && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <div className="text-center">
+            <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
+            <p className="mt-4 text-sm text-white/60">Loading Vibe...</p>
+          </div>
+        </div>
+      )}
+
+      {error && !imageUrl && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black px-6 text-center text-white">
+          <div>
+            <p className="font-semibold">Couldn't load this Vibe.</p>
+            <p className="mt-2 text-sm text-white/60">{error.message}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-black/65" />
+
+      {active && (
+        <>
+          {/* Top controls */}
+          <div className="safe-top absolute inset-x-0 top-2 z-30 flex items-center justify-between px-4 py-2">
+            <button
+              className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/25 text-white backdrop-blur-md transition active:scale-95"
+              type="button"
+              onTouchStart={(event) => event.stopPropagation()}
+              onTouchMove={(event) => event.stopPropagation()}
+              onTouchEnd={(event) => event.stopPropagation()}
+              onClick={onClose}>
+              <FiX className="text-2xl" />
+            </button>
+
+            <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
+              <div className="size-2 rounded-full bg-vibe-lime" />
+              LIVE
+            </div>
+          </div>
+
+          {/* Floating reactions */}
+          <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
+            {floatingReactions.map((reaction) => (
+              <span
+                key={reaction.id}
+                className="absolute bottom-20 text-4xl animate-vibe-reaction"
+                style={{
+                  left: `${reaction.left}%`,
+                  '--reaction-drift': `${reaction.drift}px`,
+                  '--reaction-rotation': `${reaction.rotation}deg`
+                }}>
+                {reaction.emoji}
+              </span>
+            ))}
+          </div>
+
+          {/* Vibe information */}
+          <div className="absolute inset-x-0 bottom-24 z-20 px-4">
+            <div className="rounded-3xl border border-white/15 bg-black/30 p-4 text-white shadow-lg backdrop-blur-md">
+              <div className="flex items-center gap-2">
+                <h2 className="truncate text-lg font-bold">{vibe.display_name}</h2>
+                <div className="size-2 shrink-0 rounded-full bg-vibe-lime" />
+              </div>
+
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-white/70">
+                <FiMapPin />
+                <span className="truncate">{formatVibeLocation(vibe)}</span>
+                <span>·</span>
+                <span className="shrink-0">{formatAge(vibe.created_at)}</span>
+              </div>
+
+              {vibe.caption && <p className="mt-3 text-sm leading-6 text-white/95">{vibe.caption}</p>}
+
+              {data?.interests?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {data.interests.map((interest) => (
+                    <span
+                      className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
+                      key={interest.id}>
+                      {interest.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Reaction controls */}
+          <div
+            className="safe-bottom absolute inset-x-0 bottom-0 z-30 px-3 pb-3"
+            onTouchStart={(event) => event.stopPropagation()}
+            onTouchMove={(event) => event.stopPropagation()}
+            onTouchEnd={(event) => event.stopPropagation()}>
+            <div className="rounded-3xl border border-white/15 bg-black/25 px-3 py-2.5 shadow-lg backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-1">
+                {REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="flex size-11 items-center justify-center rounded-full bg-white/10 text-2xl transition hover:bg-white/20 active:scale-75"
+                    type="button"
+                    onClick={() => onReaction(emoji)}>
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Viewer
+// -----------------------------------------------------------------------------
+
+const VibeViewer = ({ vibes, initialIndex, onClose }) => {
+  const { user } = useAuthStore()
+
+  const [activeIndex, setActiveIndex] = useState(initialIndex)
+
+  const [touchStartY, setTouchStartY] = useState(null)
+  const [touchCurrentY, setTouchCurrentY] = useState(null)
+
+  const [slideY, setSlideY] = useState(0)
+  const [animateSlide, setAnimateSlide] = useState(false)
+  const [transitioning, setTransitioning] = useState(false)
+
+  const [floatingReactions, setFloatingReactions] = useState([])
+
+  const vibe = vibes[activeIndex]
+  const previousVibe = activeIndex > 0 ? vibes[activeIndex - 1] : null
+  const nextVibe = activeIndex < vibes.length - 1 ? vibes[activeIndex + 1] : null
 
   const showFloatingReaction = (reaction) => {
     const floatingReaction = {
@@ -67,7 +210,7 @@ const VibeViewer = ({ vibe, onClose }) => {
 
     setTimeout(() => {
       setFloatingReactions((current) => current.filter((item) => item.id !== floatingReaction.id))
-    }, 1250)
+    }, 2000)
   }
 
   const handleReaction = async (emoji) => {
@@ -84,6 +227,90 @@ const VibeViewer = ({ vibe, onClose }) => {
     }
   }
 
+  const handleTouchStart = (event) => {
+    if (transitioning) return
+
+    const y = event.touches[0].clientY
+
+    setAnimateSlide(false)
+    setTouchStartY(y)
+    setTouchCurrentY(y)
+  }
+
+  const handleTouchMove = (event) => {
+    if (touchStartY === null || transitioning) return
+
+    const y = event.touches[0].clientY
+    let offset = y - touchStartY
+
+    if (activeIndex === 0 && offset > 0) offset *= 0.2
+    if (activeIndex === vibes.length - 1 && offset < 0) offset *= 0.2
+
+    setTouchCurrentY(y)
+    setSlideY(offset)
+  }
+
+  const changeVibe = (direction) => {
+    if (transitioning) return
+
+    const nextIndex = direction === 'up' ? activeIndex + 1 : activeIndex - 1
+
+    if (nextIndex < 0 || nextIndex >= vibes.length) {
+      setAnimateSlide(true)
+      setSlideY(0)
+      return
+    }
+
+    const viewportHeight = window.innerHeight
+    const destination = direction === 'up' ? -viewportHeight : viewportHeight
+
+    setTransitioning(true)
+    setAnimateSlide(true)
+    setSlideY(destination)
+
+    setTimeout(() => {
+      setAnimateSlide(false)
+      setActiveIndex(nextIndex)
+      setFloatingReactions([])
+      setSlideY(0)
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTransitioning(false)
+        })
+      })
+    }, TRANSITION_DURATION)
+  }
+
+  const handleTouchEnd = () => {
+    if (touchStartY === null || touchCurrentY === null || transitioning) return
+
+    const delta = touchStartY - touchCurrentY
+
+    setTouchStartY(null)
+    setTouchCurrentY(null)
+
+    if (delta > SWIPE_THRESHOLD) {
+      changeVibe('up')
+      return
+    }
+
+    if (delta < -SWIPE_THRESHOLD) {
+      changeVibe('down')
+      return
+    }
+
+    setAnimateSlide(true)
+    setSlideY(0)
+  }
+
+  const handleTouchCancel = () => {
+    setTouchStartY(null)
+    setTouchCurrentY(null)
+    setAnimateSlide(true)
+    setSlideY(0)
+  }
+
   useEffect(() => {
     const channel = subscribeToVibeReactions(vibe.id, (reaction) => {
       showFloatingReaction(reaction)
@@ -95,105 +322,59 @@ const VibeViewer = ({ vibe, onClose }) => {
   }, [vibe.id])
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black">
-      {isLoading ? (
-        <div className="flex h-full items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
-            <p className="mt-4 text-sm text-white/60">Loading Vibe...</p>
-          </div>
+    <div
+      className="fixed inset-0 z-50 overflow-hidden bg-black touch-none"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}>
+      {/* Previous Vibe */}
+      {previousVibe && (
+        <div
+          className={`absolute inset-0 ${animateSlide ? 'transition-transform ease-out' : ''}`}
+          style={{
+            transform: `translate3d(0, calc(-100% + ${slideY}px), 0)`,
+            transitionDuration: animateSlide ? `${TRANSITION_DURATION}ms` : '0ms'
+          }}>
+          <VibeSlide vibe={previousVibe} />
         </div>
-      ) : error ? (
-        <div className="flex h-full items-center justify-center px-6 text-center text-white">
-          <div>
-            <p className="font-semibold">Couldn't load this Vibe.</p>
-            <p className="mt-2 text-sm text-white/60">{error.message}</p>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="absolute inset-0">
-            {vibe.media_type === 'photo' && <img className="h-full w-full object-cover" src={data.mediaUrl} alt="" />}
-
-            <div className="absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-black/65" />
-          </div>
-
-          <div className="safe-top absolute inset-x-0 top-2 z-30 flex items-center justify-between px-4 py-2">
-            <button
-              className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/25 text-white backdrop-blur-md transition active:scale-95"
-              type="button"
-              onClick={onClose}>
-              <FiX className="text-2xl" />
-            </button>
-
-            <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
-              <div className="size-2 rounded-full bg-vibe-lime" />
-              LIVE
-            </div>
-          </div>
-
-          <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
-            {floatingReactions.map((reaction) => (
-              <span
-                key={reaction.id}
-                className="absolute bottom-20 text-4xl animate-vibe-reaction"
-                style={{
-                  left: `${reaction.left}%`,
-                  '--reaction-drift': `${reaction.drift}px`,
-                  '--reaction-rotation': `${reaction.rotation}deg`
-                }}>
-                {reaction.emoji}
-              </span>
-            ))}
-          </div>
-
-          <div className="absolute inset-x-0 bottom-24 z-20 px-4">
-            <div className="rounded-3xl border border-white/15 bg-black/30 p-4 text-white shadow-lg backdrop-blur-md">
-              <div className="flex items-center gap-2">
-                <h2 className="truncate text-lg font-bold">{vibe.display_name}</h2>
-                <div className="size-2 shrink-0 rounded-full bg-vibe-lime" />
-              </div>
-
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-white/70">
-                <FiMapPin />
-                <span>{formatDistance(vibe.distance_meters)}</span>
-                <span>·</span>
-                <span>{formatAge(vibe.created_at)}</span>
-              </div>
-
-              {vibe.caption && <p className="mt-3 text-sm leading-6 text-white/95">{vibe.caption}</p>}
-
-              {data.interests.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {data.interests.map((interest) => (
-                    <span
-                      className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
-                      key={interest.id}>
-                      {interest.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="safe-bottom absolute inset-x-0 bottom-0 z-30 px-3 pb-3">
-            <div className="rounded-3xl border border-white/15 bg-black/25 px-3 py-2.5 shadow-lg backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-1">
-                {REACTIONS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    className="flex size-11 items-center justify-center rounded-full bg-white/10 text-2xl transition hover:bg-white/20 active:scale-75"
-                    type="button"
-                    onClick={() => handleReaction(emoji)}>
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </>
       )}
+
+      {/* Current Vibe */}
+      <div
+        className={`absolute inset-0 ${animateSlide ? 'transition-transform ease-out' : ''}`}
+        style={{
+          transform: `translate3d(0, ${slideY}px, 0)`,
+          transitionDuration: animateSlide ? `${TRANSITION_DURATION}ms` : '0ms'
+        }}>
+        <VibeSlide vibe={vibe} active floatingReactions={floatingReactions} onClose={onClose} onReaction={handleReaction} />
+      </div>
+
+      {/* Next Vibe */}
+      {nextVibe && (
+        <div
+          className={`absolute inset-0 ${animateSlide ? 'transition-transform ease-out' : ''}`}
+          style={{
+            transform: `translate3d(0, calc(100% + ${slideY}px), 0)`,
+            transitionDuration: animateSlide ? `${TRANSITION_DURATION}ms` : '0ms'
+          }}>
+          <VibeSlide vibe={nextVibe} />
+        </div>
+      )}
+
+      {/* Position indicator */}
+      <div className="pointer-events-none absolute right-3 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-1.5">
+        {vibes.slice(Math.max(0, activeIndex - 2), activeIndex + 3).map((item) => {
+          const index = vibes.findIndex((vibe) => vibe.id === item.id)
+
+          return (
+            <div
+              key={item.id}
+              className={`rounded-full transition-all ${index === activeIndex ? 'h-5 w-1.5 bg-white' : 'size-1.5 bg-white/40'}`}
+            />
+          )
+        })}
+      </div>
     </div>
   )
 }
