@@ -53,22 +53,22 @@ const AuthScreen = () => {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col bg-black px-6 pb-8 pt-[calc(env(safe-area-inset-top)+3rem)] text-white">
+    <main className="flex min-h-dvh flex-col bg-vibe-bg px-6 pb-8 pt-[calc(env(safe-area-inset-top)+3rem)] text-vibe-text">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <header className="mb-12">
-          <h1 className="text-4xl font-black tracking-tight">VibeMoments</h1>
-          <p className="mt-3 text-lg text-white/60">See what's happening around you. Right now.</p>
+          <h1 className="text-4xl font-black tracking-tight text-vibe-petrol">VibeMoments</h1>
+          <p className="mt-3 text-lg text-vibe-muted">See what's happening around you. Right now.</p>
         </header>
 
         <div className="flex-1">
-          <h2 className="text-2xl font-bold">{isRegister ? 'Create your account' : 'Welcome back'}</h2>
+          <h2 className="text-2xl font-bold text-vibe-text">{isRegister ? 'Create your account' : 'Welcome back'}</h2>
 
-          <p className="mt-2 text-white/50">
+          <p className="mt-2 text-vibe-muted">
             {isRegister ? 'Join the vibes happening around you.' : "Log in to see what's happening nearby."}
           </p>
 
           <button
-            className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-5 py-4 font-semibold text-black transition active:scale-[0.98]"
+            className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-vibe-petrol/10 bg-vibe-surface px-5 py-4 font-semibold text-vibe-text shadow-sm transition hover:border-vibe-petrol/25 active:scale-[0.98]"
             type="button"
             onClick={handleGoogle}>
             <FcGoogle className="text-xl" />
@@ -76,14 +76,14 @@ const AuthScreen = () => {
           </button>
 
           <div className="my-6 flex items-center gap-4">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-sm text-white/30">or</span>
-            <div className="h-px flex-1 bg-white/10" />
+            <div className="h-px flex-1 bg-vibe-petrol/15" />
+            <span className="text-sm text-vibe-muted/70">or</span>
+            <div className="h-px flex-1 bg-vibe-petrol/15" />
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <input
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 outline-none transition focus:border-white/30"
+              className="w-full rounded-2xl border border-vibe-petrol/15 bg-vibe-surface px-5 py-4 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-petrol focus:ring-2 focus:ring-vibe-petrol/10"
               type="email"
               placeholder="Email"
               value={email}
@@ -93,7 +93,7 @@ const AuthScreen = () => {
             />
 
             <input
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 outline-none transition focus:border-white/30"
+              className="w-full rounded-2xl border border-vibe-petrol/15 bg-vibe-surface px-5 py-4 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-petrol focus:ring-2 focus:ring-vibe-petrol/10"
               type="password"
               placeholder="Password"
               value={password}
@@ -103,11 +103,11 @@ const AuthScreen = () => {
               required
             />
 
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            {message && <p className="text-sm text-emerald-400">{message}</p>}
+            {error && <p className="text-sm font-medium text-red-500">{error}</p>}
+            {message && <p className="text-sm font-medium text-vibe-petrol">{message}</p>}
 
             <button
-              className="w-full rounded-2xl bg-white px-5 py-4 font-bold text-black transition active:scale-[0.98] disabled:opacity-50"
+              className="w-full rounded-2xl bg-vibe-petrol px-5 py-4 font-bold text-vibe-surface shadow-lg shadow-vibe-petrol/15 transition hover:bg-vibe-petrol-light active:scale-[0.98] disabled:opacity-50"
               type="submit"
               disabled={loading}>
               {loading ? 'Please wait...' : isRegister ? 'Create account' : 'Log in'}
@@ -115,10 +115,10 @@ const AuthScreen = () => {
           </form>
         </div>
 
-        <div className="pt-8 text-center text-sm text-white/50">
+        <div className="pt-8 text-center text-sm text-vibe-muted">
           {isRegister ? 'Already have an account?' : 'New to VibeMoments?'}
 
-          <button className="ml-2 font-semibold text-white" type="button" onClick={switchMode}>
+          <button className="ml-2 font-semibold text-vibe-apricot transition active:opacity-60" type="button" onClick={switchMode}>
             {isRegister ? 'Log in' : 'Create account'}
           </button>
         </div>

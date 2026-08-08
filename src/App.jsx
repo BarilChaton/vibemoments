@@ -1,6 +1,6 @@
-import AuthScreen from './components/auth/authScreen.jsx'
-import { signOut } from './services/auth.js'
 import useAuthStore from './stores/useAuthStore.js'
+import AuthScreen from './components/auth/authScreen.jsx'
+import Onboarding from './components/onboarding/onboarding.jsx'
 
 const App = () => {
   const { user, profile, initialized } = useAuthStore()
@@ -15,17 +15,7 @@ const App = () => {
 
   if (!user) return <AuthScreen />
 
-  if (!profile?.onboarding_completed) {
-    return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-black text-white">
-        <p>Onboarding coming next...</p>
-
-        <button className="rounded-xl bg-white px-5 py-3 font-semibold text-black" onClick={signOut}>
-          Log out
-        </button>
-      </main>
-    )
-  }
+  if (!profile?.onboarding_completed) return <Onboarding />
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-black text-white">

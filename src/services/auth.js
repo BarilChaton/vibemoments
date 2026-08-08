@@ -1,54 +1,66 @@
-import { supabase } from "./supabase.js";
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
+import { supabase } from './supabase.js'
 
 export const signUp = async (email, password) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password
-  });
+  })
 
-  if (error) throw error;
+  if (error) throw error
 
-  return data;
-};
+  return data
+}
 
 export const signIn = async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
-  });
+  })
 
-  if (error) throw error;
+  if (error) throw error
 
-  return data;
-};
+  return data
+}
 
 export const signInWithGoogle = async () => {
+  const isNative = Capacitor.isNativePlatform()
+
+  if (!isNative) {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    })
+
+    if (error) throw error
+
+    return data
+  }
+
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
+    provider: 'google',
     options: {
-      redirectTo: window.location.origin
+      redirectTo: 'vibemoments://auth/callback',
+      skipBrowserRedirect: true
     }
-  });
+  })
 
-  if (error) throw error;
+  if (error) throw error
 
-  return data;
-};
+  await Browser.open({
+    url: data.url
+  })
 
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
+  return data
+}
 
-  if (error) throw error;
-};
+export const getProfile = async (userId) => {
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
 
-export const getProfile = async userId => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  if (error) throw error
 
-  if (error) throw error;
-
-  return data;
-};
+  return data
+}

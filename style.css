@@ -1,5 +1,20 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-vibe-violet: #7c3aed;
+  --color-vibe-violet-dark: #2e1065;
+
+  --color-vibe-yellow: #facc15;
+
+  --color-vibe-ocean: #14b8a6;
+
+  --color-vibe-bg: #120d1c;
+  --color-vibe-surface: #1c1528;
+
+  --color-vibe-text: #f8f7fa;
+  --color-vibe-muted: #a9a3b3;
+}
+
 :root {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-synthesis: none;
@@ -7,8 +22,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  background: #000;
-  color: #fff;
+  background: var(--color-vibe-bg);
+  color: var(--color-vibe-text);
 }
 
 * {
@@ -18,16 +33,13 @@
 html,
 body,
 #root {
-  width: 100%;
-  min-width: 320px;
-  height: 100%;
-  margin: 0;
+  min-height: 100%;
+  background: var(--color-vibe-bg);
 }
 
 body {
-  overflow: hidden;
-  overscroll-behavior: none;
-  -webkit-tap-highlight-color: transparent;
+  margin: 0;
+  color: var(--color-vibe-text);
 }
 
 button,
