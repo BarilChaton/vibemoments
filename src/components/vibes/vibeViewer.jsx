@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { FiMapPin, FiX } from 'react-icons/fi'
 import {
@@ -49,20 +49,69 @@ const loadVibeDetails = async (vibe) => {
 // -----------------------------------------------------------------------------
 
 const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onReaction }) => {
+  const videoRef = useRef(null)
+  const [videoReady, setVideoReady] = useState(false)
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['vibe-view', vibe.id],
     queryFn: () => loadVibeDetails(vibe),
     staleTime: 1000 * 60 * 5
   })
 
-  const fallbackImage = vibe.media_url || vibe.thumbnail_url || null
-  const imageUrl = data?.mediaUrl || fallbackImage
+  const fallbackImage = vibe.thumbnail_url || vibe.media_url || null
+  const photoUrl = vibe.media_type === 'photo' ? data?.mediaUrl || fallbackImage : null
+  const videoUrl = vibe.media_type === 'video' ? data?.mediaUrl : null
+
+  useEffect(() => {
+    const video = videoRef.current
+
+    if (!video) return
+
+    if (active) {
+      video.currentTime = 0
+
+      video.play().catch((error) => {
+        console.log('Video autoplay was prevented:', error)
+      })
+    } else {
+      video.pause()
+    }
+  }, [active, videoUrl])
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
-      {imageUrl && vibe.media_type === 'photo' && <img className="absolute inset-0 h-full w-full object-cover" src={imageUrl} alt="" />}
+      {/* Photo */}
+      {vibe.media_type === 'photo' && photoUrl && <img className="absolute inset-0 h-full w-full object-cover" src={photoUrl} alt="" />}
 
-      {isLoading && !imageUrl && (
+      {/* Video thumbnail / poster */}
+      {vibe.media_type === 'video' && fallbackImage && (
+        <img
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${
+            videoReady ? 'opacity-0' : 'opacity-100'
+          }`}
+          src={fallbackImage}
+          alt=""
+        />
+      )}
+
+      {/* Video */}
+      {vibe.media_type === 'video' && videoUrl && (
+        <video
+          ref={videoRef}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${
+            videoReady ? 'opacity-100' : 'opacity-0'
+          }`}
+          src={videoUrl}
+          loop
+          playsInline
+          preload={active ? 'auto' : 'metadata'}
+          poster={fallbackImage || undefined}
+          onCanPlay={() => setVideoReady(true)}
+        />
+      )}
+
+      {/* Loading fallback */}
+      {isLoading && !fallbackImage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black">
           <div className="text-center">
             <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
@@ -71,7 +120,8 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
         </div>
       )}
 
-      {error && !imageUrl && (
+      {/* Error */}
+      {error && !fallbackImage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black px-6 text-center text-white">
           <div>
             <p className="font-semibold">Couldn't load this Vibe.</p>
@@ -80,6 +130,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
         </div>
       )}
 
+      {/* Background readability gradient */}
       <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-black/65" />
 
       {active && (
@@ -102,7 +153,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
             </div>
           </div>
 
-          {/* Floating reactions */}
+          {/* Floating live reactions */}
           <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
             {floatingReactions.map((reaction) => (
               <span
@@ -197,6 +248,10 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
   const previousVibe = activeIndex > 0 ? vibes[activeIndex - 1] : null
   const nextVibe = activeIndex < vibes.length - 1 ? vibes[activeIndex + 1] : null
 
+  // ---------------------------------------------------------------------------
+  // Reactions
+  // ---------------------------------------------------------------------------
+
   const showFloatingReaction = (reaction) => {
     const floatingReaction = {
       id: `${reaction.id}-${Date.now()}-${Math.random()}`,
@@ -226,6 +281,10 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
       console.error('Failed to send Vibe reaction:', error)
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Swipe gestures
+  // ---------------------------------------------------------------------------
 
   const handleTouchStart = (event) => {
     if (transitioning) return
@@ -311,6 +370,10 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
     setSlideY(0)
   }
 
+  // ---------------------------------------------------------------------------
+  // Realtime
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     const channel = subscribeToVibeReactions(vibe.id, (reaction) => {
       showFloatingReaction(reaction)
@@ -320,6 +383,10 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
       unsubscribeFromVibeReactions(channel)
     }
   }, [vibe.id])
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div
@@ -336,7 +403,7 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
             transform: `translate3d(0, calc(-100% + ${slideY}px), 0)`,
             transitionDuration: animateSlide ? `${TRANSITION_DURATION}ms` : '0ms'
           }}>
-          <VibeSlide vibe={previousVibe} />
+          <VibeSlide key={previousVibe.id} vibe={previousVibe} />
         </div>
       )}
 
@@ -347,7 +414,7 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
           transform: `translate3d(0, ${slideY}px, 0)`,
           transitionDuration: animateSlide ? `${TRANSITION_DURATION}ms` : '0ms'
         }}>
-        <VibeSlide vibe={vibe} active floatingReactions={floatingReactions} onClose={onClose} onReaction={handleReaction} />
+        <VibeSlide key={vibe.id} vibe={vibe} active floatingReactions={floatingReactions} onClose={onClose} onReaction={handleReaction} />
       </div>
 
       {/* Next Vibe */}
@@ -358,7 +425,7 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
             transform: `translate3d(0, calc(100% + ${slideY}px), 0)`,
             transitionDuration: animateSlide ? `${TRANSITION_DURATION}ms` : '0ms'
           }}>
-          <VibeSlide vibe={nextVibe} />
+          <VibeSlide key={nextVibe.id} vibe={nextVibe} />
         </div>
       )}
 

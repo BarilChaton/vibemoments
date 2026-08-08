@@ -10,8 +10,8 @@ const BottomNavigation = ({ activeView, onChange }) => {
   ]
 
   return (
-    <nav className="safe-bottom border-t border-vibe-petrol/10 bg-vibe-surface">
-      <div className="mx-auto flex w-full max-w-md items-end justify-around px-2 pt-2">
+    <nav className="safe-bottom relative z-40 border-t border-vibe-petrol/10 bg-vibe-surface">
+      <div className="mx-auto flex h-17 w-full max-w-md items-center justify-around px-2">
         {items.map((item) => {
           const Icon = item.icon
           const active = activeView === item.id
@@ -19,8 +19,12 @@ const BottomNavigation = ({ activeView, onChange }) => {
 
           if (create) {
             return (
-              <button className="flex min-w-16 flex-col items-center gap-1" key={item.id} type="button" onClick={() => onChange(item.id)}>
-                <div className="-mt-7 flex size-16 items-center justify-center rounded-full border-4 border-vibe-surface bg-vibe-apricot text-vibe-text shadow-lg shadow-vibe-apricot/20 transition active:scale-95">
+              <button
+                className="relative flex h-full min-w-16 flex-col items-center justify-end pb-2"
+                key={item.id}
+                type="button"
+                onClick={() => onChange(item.id)}>
+                <div className="absolute -top-5 flex size-15 items-center justify-center rounded-full border-4 border-vibe-surface bg-vibe-apricot text-vibe-text shadow-lg shadow-vibe-apricot/20 transition active:scale-95">
                   <Icon className="text-3xl" />
                 </div>
 
@@ -31,7 +35,9 @@ const BottomNavigation = ({ activeView, onChange }) => {
 
           return (
             <button
-              className={`flex min-w-16 flex-col items-center gap-1 py-2 transition ${active ? 'text-vibe-petrol' : 'text-vibe-muted'}`}
+              className={`flex h-full min-w-16 flex-col items-center justify-center gap-1 transition ${
+                active ? 'text-vibe-petrol' : 'text-vibe-muted'
+              }`}
               key={item.id}
               type="button"
               onClick={() => onChange(item.id)}>
