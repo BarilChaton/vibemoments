@@ -4,7 +4,6 @@ import { FcGoogle } from 'react-icons/fc'
 
 const AuthScreen = () => {
   const [mode, setMode] = useState('login')
-  const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,7 +21,7 @@ const AuthScreen = () => {
 
     try {
       if (isRegister) {
-        const data = await signUp(email, password, displayName)
+        const data = await signUp(email, password)
 
         if (!data.session) {
           setMessage('Check your email to confirm your account.')
@@ -83,17 +82,6 @@ const AuthScreen = () => {
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {isRegister && (
-              <input
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 outline-none transition focus:border-white/30"
-                type="text"
-                placeholder="Display name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                required
-              />
-            )}
-
             <input
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 outline-none transition focus:border-white/30"
               type="email"
