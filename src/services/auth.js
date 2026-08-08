@@ -57,6 +57,12 @@ export const signInWithGoogle = async () => {
   return data
 }
 
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut()
+
+  if (error) throw error
+}
+
 export const getProfile = async (userId) => {
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
 
