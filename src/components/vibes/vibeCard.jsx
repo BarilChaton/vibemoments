@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FiMapPin, FiPlay } from 'react-icons/fi'
+import { FiMapPin } from 'react-icons/fi'
 import { getVibeMediaUrl } from '../../services/vibes.js'
 import { formatVibeLocation } from '../../utils/formatVibeLocation.js'
 
@@ -110,13 +110,6 @@ const VibeCard = ({ vibe, onClick }) => {
           poster={thumbnailUrl || undefined}
           onCanPlay={handleVideoReady}
         />
-      )}
-
-      {/* Video indicator */}
-      {vibe.media_type === 'video' && (
-        <div className="pointer-events-none absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md">
-          <FiPlay className="ml-0.5 text-sm" />
-        </div>
       )}
 
       {/* Bottom gradient */}
