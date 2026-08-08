@@ -1,5 +1,4 @@
 import { supabase } from './supabase.js'
-import { normalizeInterestName } from '../utils/normalizeInterestsName.js'
 
 export const getRandomInterests = async (limit = 15) => {
   const { data, error } = await supabase.rpc('get_random_interests', {
@@ -19,39 +18,6 @@ export const saveDisplayName = async (userId, displayName) => {
       updated_at: new Date().toISOString()
     })
     .eq('id', userId)
-    .select()
-    .single()
-
-  if (error) throw error
-
-  return data
-}
-
-export const createInterest = async (userId, name) => {
-  const trimmedName = name.trim()
-  const normalizedName = normalizeInterestName(trimmedName)
-
-  if (!normalizedName) throw new Error('Invalid interest name')
-
-  const { data: existing, error: lookupError } = await supabase
-    .from('interests')
-    .select('*')
-    .eq('normalized_name', normalizedName)
-    .maybeSingle()
-
-  if (lookupError) throw lookupError
-
-  // If somebody already created "Billie Eilish",
-  // reuse it instead of creating another.
-  if (existing) return existing
-
-  const { data, error } = await supabase
-    .from('interests')
-    .insert({
-      name: trimmedName,
-      normalized_name: normalizedName,
-      created_by: userId
-    })
     .select()
     .single()
 

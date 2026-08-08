@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FiArrowLeft, FiPlus } from 'react-icons/fi'
-import { createInterest, getRandomInterests, saveUserInterests } from '../../services/onboarding.js'
+import { getRandomInterests, saveUserInterests } from '../../services/onboarding.js'
+import { createInterest } from '../../services/interests.js'
 import useAuthStore from '../../stores/useAuthStore.js'
 
 const MIN_INTERESTS = 3

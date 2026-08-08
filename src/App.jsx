@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import useAuthStore from './stores/useAuthStore.js'
 import AuthScreen from './components/auth/authScreen.jsx'
 import Onboarding from './components/onboarding/onboarding.jsx'
@@ -11,7 +12,16 @@ import Inbox from './views/Inbox.jsx'
 
 const App = () => {
   const { user, profile, initialized } = useAuthStore()
+  const queryClient = useQueryClient()
   const [activeView, setActiveView] = useState('home')
+
+  const handleVibePublished = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ['nearby-vibes']
+    })
+
+    setActiveView('home')
+  }
 
   if (!initialized) {
     return (
@@ -30,7 +40,7 @@ const App = () => {
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {activeView === 'home' && <Home />}
         {activeView === 'friends' && <Friends />}
-        {activeView === 'create' && <CreateVibe />}
+        {activeView === 'create' && <CreateVibe onPublished={handleVibePublished} />}
         {activeView === 'inbox' && <Inbox />}
         {activeView === 'profile' && <Profile />}
       </div>
