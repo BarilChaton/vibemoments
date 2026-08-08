@@ -58,14 +58,16 @@ const VibeViewer = ({ vibe, onClose }) => {
     const floatingReaction = {
       id: `${reaction.id}-${Date.now()}-${Math.random()}`,
       emoji: reaction.emoji,
-      left: 12 + Math.random() * 76
+      left: 12 + Math.random() * 76,
+      drift: Math.round(Math.random() * 160 - 80),
+      rotation: Math.round(Math.random() * 50 - 25)
     }
 
     setFloatingReactions((current) => [...current, floatingReaction])
 
     setTimeout(() => {
       setFloatingReactions((current) => current.filter((item) => item.id !== floatingReaction.id))
-    }, 2500)
+    }, 1250)
   }
 
   const handleReaction = async (emoji) => {
@@ -93,97 +95,104 @@ const VibeViewer = ({ vibe, onClose }) => {
   }, [vibe.id])
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-vibe-bg text-vibe-text pt-4">
-      <div className="safe-top flex shrink-0 items-center justify-between px-4 pb-3 pt-6">
-        <button
-          className="flex size-11 items-center justify-center rounded-full bg-vibe-surface text-vibe-petrol shadow-sm transition active:scale-95"
-          type="button"
-          onClick={onClose}>
-          <FiX className="text-2xl" />
-        </button>
-
-        <div className="flex items-center gap-2 rounded-full bg-vibe-surface px-3 py-2 text-xs font-semibold text-vibe-petrol shadow-sm">
-          <div className="size-2 rounded-full bg-vibe-lime" />
-          LIVE
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black">
+      {isLoading ? (
+        <div className="flex h-full items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
+            <p className="mt-4 text-sm text-white/60">Loading Vibe...</p>
+          </div>
         </div>
-      </div>
+      ) : error ? (
+        <div className="flex h-full items-center justify-center px-6 text-center text-white">
+          <div>
+            <p className="font-semibold">Couldn't load this Vibe.</p>
+            <p className="mt-2 text-sm text-white/60">{error.message}</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="absolute inset-0">
+            {vibe.media_type === 'photo' && <img className="h-full w-full object-cover" src={data.mediaUrl} alt="" />}
 
-      <div className="relative mx-3 shrink-0 overflow-hidden rounded-3xl bg-black">
-        {isLoading ? (
-          <div className="flex aspect-3/4 items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
-              <p className="mt-4 text-sm text-white/60">Loading Vibe...</p>
+            <div className="absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-black/65" />
+          </div>
+
+          <div className="safe-top absolute inset-x-0 top-2 z-30 flex items-center justify-between px-4 py-2">
+            <button
+              className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/25 text-white backdrop-blur-md transition active:scale-95"
+              type="button"
+              onClick={onClose}>
+              <FiX className="text-2xl" />
+            </button>
+
+            <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
+              <div className="size-2 rounded-full bg-vibe-lime" />
+              LIVE
             </div>
           </div>
-        ) : error ? (
-          <div className="flex aspect-3/4 items-center justify-center px-6 text-center text-white">
-            <div>
-              <p className="font-semibold">Couldn't load this Vibe.</p>
-              <p className="mt-2 text-sm text-white/60">{error.message}</p>
-            </div>
+
+          <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
+            {floatingReactions.map((reaction) => (
+              <span
+                key={reaction.id}
+                className="absolute bottom-20 text-4xl animate-vibe-reaction"
+                style={{
+                  left: `${reaction.left}%`,
+                  '--reaction-drift': `${reaction.drift}px`,
+                  '--reaction-rotation': `${reaction.rotation}deg`
+                }}>
+                {reaction.emoji}
+              </span>
+            ))}
           </div>
-        ) : (
-          vibe.media_type === 'photo' && <img className="max-h-[58dvh] w-full object-contain" src={data.mediaUrl} alt="" />
-        )}
 
-        <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-          {floatingReactions.map((reaction) => (
-            <span key={reaction.id} className="absolute bottom-4 text-4xl animate-vibe-reaction" style={{ left: `${reaction.left}%` }}>
-              {reaction.emoji}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {!isLoading && !error && (
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
+          <div className="absolute inset-x-0 bottom-24 z-20 px-4">
+            <div className="rounded-3xl border border-white/15 bg-black/30 p-4 text-white shadow-lg backdrop-blur-md">
               <div className="flex items-center gap-2">
-                <h2 className="truncate text-lg font-bold text-vibe-petrol">{vibe.display_name}</h2>
-                <div className="size-2 rounded-full bg-vibe-lime" />
+                <h2 className="truncate text-lg font-bold">{vibe.display_name}</h2>
+                <div className="size-2 shrink-0 rounded-full bg-vibe-lime" />
               </div>
 
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-vibe-muted">
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-white/70">
                 <FiMapPin />
                 <span>{formatDistance(vibe.distance_meters)}</span>
                 <span>·</span>
                 <span>{formatAge(vibe.created_at)}</span>
               </div>
+
+              {vibe.caption && <p className="mt-3 text-sm leading-6 text-white/95">{vibe.caption}</p>}
+
+              {data.interests.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {data.interests.map((interest) => (
+                    <span
+                      className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm"
+                      key={interest.id}>
+                      {interest.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {vibe.caption && <p className="mt-4 text-sm leading-6 text-vibe-text">{vibe.caption}</p>}
-
-          {data.interests.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {data.interests.map((interest) => (
-                <span
-                  className="rounded-full border border-vibe-petrol/15 bg-vibe-surface px-3 py-1.5 text-xs font-semibold text-vibe-petrol"
-                  key={interest.id}>
-                  {interest.name}
-                </span>
-              ))}
+          <div className="safe-bottom absolute inset-x-0 bottom-0 z-30 px-3 pb-3">
+            <div className="rounded-3xl border border-white/15 bg-black/25 px-3 py-2.5 shadow-lg backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-1">
+                {REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="flex size-11 items-center justify-center rounded-full bg-white/10 text-2xl transition hover:bg-white/20 active:scale-75"
+                    type="button"
+                    onClick={() => handleReaction(emoji)}>
+                    {emoji}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {!isLoading && !error && (
-        <div className="safe-bottom shrink-0 border-t border-vibe-petrol/10 bg-vibe-surface px-4">
-          <div className="flex items-center justify-between gap-2 py-4">
-            {REACTIONS.map((emoji) => (
-              <button
-                key={emoji}
-                className="flex size-11 items-center justify-center rounded-full bg-vibe-bg text-2xl shadow-sm transition active:scale-75"
-                type="button"
-                onClick={() => handleReaction(emoji)}>
-                {emoji}
-              </button>
-            ))}
           </div>
-        </div>
+        </>
       )}
     </div>
   )
