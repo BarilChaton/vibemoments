@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiMapPin, FiRefreshCw } from 'react-icons/fi'
-import VibeCard from '../components/vibes/VibeCard.jsx'
 import { getNearbyVibes, getVibeMediaUrl } from '../services/vibes.js'
+import VibeCard from '../components/vibes/VibeCard.jsx'
+import VibeViewer from '../components/vibes/VibeViewer.jsx'
 
 const loadNearbyVibes = async () => {
   const position = await Geolocation.getCurrentPosition({
@@ -41,6 +43,8 @@ const Home = () => {
     queryFn: loadNearbyVibes,
     staleTime: 1000 * 30
   })
+
+  const [selectedVibe, setSelectedVibe] = useState(null)
 
   return (
     <div className="flex flex-1 flex-col">
@@ -104,10 +108,12 @@ const Home = () => {
       ) : (
         <div className="grid grid-cols-2 gap-3 px-3 pb-8 pt-2">
           {vibes.map((vibe) => (
-            <VibeCard key={vibe.id} vibe={vibe} />
+            <VibeCard key={vibe.id} vibe={vibe} onClick={setSelectedVibe} />
           ))}
         </div>
       )}
+
+      {selectedVibe && <VibeViewer vibe={selectedVibe} onClose={() => setSelectedVibe(null)} />}
     </div>
   )
 }

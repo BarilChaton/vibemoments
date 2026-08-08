@@ -110,6 +110,67 @@ export const deleteVibe = async (vibeId) => {
   if (error) throw error
 }
 
+export const getVibeInterests = async (vibeId) => {
+  const { data, error } = await supabase
+    .from('vibe_interests')
+    .select(
+      `
+      interest_id,
+      interests (
+        id,
+        name
+      )
+    `
+    )
+    .eq('vibe_id', vibeId)
+
+  if (error) throw error
+
+  return data.map((item) => item.interests).filter(Boolean)
+}
+
+export const sendVibeReaction = async ({ vibeId, userId, emoji }) => {
+  const { data, error } = await supabase
+    .from('vibe_reactions')
+    .insert({
+      vibe_id: vibeId,
+      user_id: userId,
+      emoji
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+export const subscribeToVibeReactions = (vibeId, onReaction) => {
+  const channel = supabase
+    .channel(`vibe-reactions-${vibeId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'vibe_reactions',
+        filter: `vibe_id=eq.${vibeId}`
+      },
+      (payload) => {
+        onReaction(payload.new)
+      }
+    )
+    .subscribe()
+
+  return channel
+}
+
+export const unsubscribeFromVibeReactions = async (channel) => {
+  if (!channel) return
+
+  await supabase.removeChannel(channel)
+}
+
 // -----------------------------------------------------------------------------
 // Nearby feed
 // -----------------------------------------------------------------------------

@@ -70,3 +70,24 @@ video {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+@keyframes vibe-reaction {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.7);
+  }
+
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-220px) scale(1.35);
+  }
+}
+
+.animate-vibe-reaction {
+  animation: vibe-reaction 1.5s ease-out forwards;
+}
