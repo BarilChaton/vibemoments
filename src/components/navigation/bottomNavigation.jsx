@@ -2,9 +2,11 @@ import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { FiHome, FiMessageCircle, FiPlus, FiUser, FiUsers } from 'react-icons/fi'
 import { getTotalUnreadCount, subscribeToInboxMessages, unsubscribeFromInboxMessages } from '../../services/connections.js'
+import useChatStore from '../../stores/useChatStore.js'
 
 const BottomNavigation = ({ activeView, onChange }) => {
   const queryClient = useQueryClient()
+  const { activeConversationId } = useChatStore()
 
   const items = [
     { id: 'home', label: 'Vibes', icon: FiHome },
@@ -14,39 +16,29 @@ const BottomNavigation = ({ activeView, onChange }) => {
     { id: 'profile', label: 'Profile', icon: FiUser }
   ]
 
-  // ---------------------------------------------------------------------------
-  // Unread messages
-  // ---------------------------------------------------------------------------
-
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['total-unread-messages'],
     queryFn: getTotalUnreadCount,
     staleTime: 1000 * 15
   })
 
-  // ---------------------------------------------------------------------------
-  // Global realtime message listener
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
-    const channel = subscribeToInboxMessages(() => {
+    const channel = subscribeToInboxMessages((newMessage) => {
       queryClient.invalidateQueries({
         queryKey: ['conversations']
       })
 
-      queryClient.invalidateQueries({
-        queryKey: ['total-unread-messages']
-      })
+      if (newMessage.conversation_id !== activeConversationId) {
+        queryClient.invalidateQueries({
+          queryKey: ['total-unread-messages']
+        })
+      }
     })
 
     return () => {
       unsubscribeFromInboxMessages(channel)
     }
-  }, [queryClient])
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
+  }, [activeConversationId, queryClient])
 
   return (
     <nav className="safe-bottom relative z-40 border-t border-vibe-petrol/10 bg-vibe-surface">

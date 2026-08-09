@@ -33,11 +33,11 @@ const formatConversationTime = (createdAt) => {
 // Component
 // -----------------------------------------------------------------------------
 
-const Inbox = () => {
+const Inbox = ({ initialConversationId = null }) => {
   const queryClient = useQueryClient()
 
-  const [activeTab, setActiveTab] = useState('requests')
-  const [activeConversationId, setActiveConversationId] = useState(null)
+  const [activeTab, setActiveTab] = useState(initialConversationId ? 'chats' : 'requests')
+  const [activeConversationId, setActiveConversationId] = useState(initialConversationId)
 
   // ---------------------------------------------------------------------------
   // Requests
@@ -75,10 +75,12 @@ const Inbox = () => {
     if (!conversationId) return
 
     setActiveConversationId(conversationId)
+    setActiveTab('chats')
   }
 
   const handleCloseConversation = () => {
     setActiveConversationId(null)
+    setActiveTab('chats')
   }
 
   // ---------------------------------------------------------------------------
@@ -102,9 +104,9 @@ const Inbox = () => {
 
     if (conversationId) {
       setActiveConversationId(conversationId)
-    } else {
-      setActiveTab('chats')
     }
+
+    setActiveTab('chats')
   }
 
   // ---------------------------------------------------------------------------

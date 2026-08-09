@@ -31,7 +31,7 @@ const loadNearbyVibes = async () => {
   )
 }
 
-const Home = () => {
+const Home = ({ onOpenConversation }) => {
   const {
     data: vibes = [],
     isLoading,
@@ -53,6 +53,7 @@ const Home = () => {
           <div>
             <p className="text-sm font-semibold text-vibe-apricot-dark">RIGHT NOW</p>
             <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Nearby Vibes</h1>
+
             <p className="mt-1 flex items-center gap-1 text-sm text-vibe-muted">
               <FiMapPin />
               Within 5 km
@@ -114,7 +115,12 @@ const Home = () => {
       )}
 
       {selectedVibeIndex !== null && (
-        <VibeViewer vibes={vibes} initialIndex={selectedVibeIndex} onClose={() => setSelectedVibeIndex(null)} />
+        <VibeViewer
+          vibes={vibes}
+          initialIndex={selectedVibeIndex}
+          onClose={() => setSelectedVibeIndex(null)}
+          onOpenConversation={onOpenConversation}
+        />
       )}
     </div>
   )

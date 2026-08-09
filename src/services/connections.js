@@ -1,5 +1,9 @@
 import { supabase } from './supabase.js'
 
+// -----------------------------------------------------------------------------
+// Connection requests
+// -----------------------------------------------------------------------------
+
 export const createConnectionRequest = async ({ vibeId, message }) => {
   const { data, error } = await supabase.rpc('create_vibe_connection_request', {
     target_vibe_id: vibeId,
@@ -12,17 +16,55 @@ export const createConnectionRequest = async ({ vibeId, message }) => {
 }
 
 export const getConnectionRequestForVibe = async ({ vibeId, userId }) => {
-  const { data, error } = await supabase
+  const { data: request, error: requestError } = await supabase
     .from('vibe_connection_requests')
-    .select('id, vibe_id, status, created_at, expires_at, responded_at')
+    .select('id, vibe_id, sender_id, creator_id, status, created_at, expires_at, responded_at')
     .eq('vibe_id', vibeId)
     .eq('sender_id', userId)
+    .maybeSingle()
+
+  if (requestError) throw requestError
+  if (!request) return null
+
+  if (request.status !== 'accepted') return request
+
+  const { data: conversation, error: conversationError } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('connection_request_id', request.id)
+    .maybeSingle()
+
+  if (conversationError) throw conversationError
+
+  return {
+    ...request,
+    conversation
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Existing connection between two users
+// -----------------------------------------------------------------------------
+
+export const getExistingConversationBetweenUsers = async ({ userId, otherUserId }) => {
+  if (!userId || !otherUserId || userId === otherUserId) return null
+
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('id, connection_request_id, user_a_id, user_b_id, created_at')
+    .or(`and(user_a_id.eq.${userId},user_b_id.eq.${otherUserId}),and(user_a_id.eq.${otherUserId},user_b_id.eq.${userId})`)
+    .order('created_at', { ascending: true })
+    .limit(1)
     .maybeSingle()
 
   if (error) throw error
 
   return data
 }
+
+// -----------------------------------------------------------------------------
+// Incoming requests
+// -----------------------------------------------------------------------------
 
 export const getIncomingConnectionRequests = async () => {
   const { data: authData, error: authError } = await supabase.auth.getUser()
@@ -59,6 +101,10 @@ export const getIncomingConnectionRequests = async () => {
   return data
 }
 
+// -----------------------------------------------------------------------------
+// Accept request
+// -----------------------------------------------------------------------------
+
 export const acceptConnectionRequest = async ({ requestId, reply }) => {
   const { data, error } = await supabase.rpc('accept_vibe_connection_request', {
     request_id: requestId,
@@ -69,6 +115,10 @@ export const acceptConnectionRequest = async ({ requestId, reply }) => {
 
   return data
 }
+
+// -----------------------------------------------------------------------------
+// Conversations
+// -----------------------------------------------------------------------------
 
 export const getConversations = async () => {
   const { data, error } = await supabase.rpc('get_conversation_summaries')
@@ -82,39 +132,6 @@ export const getConversations = async () => {
       display_name: conversation.other_user_display_name
     }
   }))
-}
-
-export const getConversationMessages = async (conversationId) => {
-  const { data, error } = await supabase
-    .from('messages')
-    .select('id, conversation_id, sender_id, body, created_at')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
-
-  if (error) throw error
-
-  return data
-}
-
-export const sendMessage = async ({ conversationId, message }) => {
-  const { data: authData, error: authError } = await supabase.auth.getUser()
-
-  if (authError) throw authError
-  if (!authData.user) throw new Error('Not authenticated')
-
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: authData.user.id,
-      body: message.trim()
-    })
-    .select()
-    .single()
-
-  if (error) throw error
-
-  return data
 }
 
 export const getConversation = async (conversationId) => {
@@ -155,6 +172,47 @@ export const getConversation = async (conversationId) => {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Messages
+// -----------------------------------------------------------------------------
+
+export const getConversationMessages = async (conversationId) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, conversation_id, sender_id, body, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  return data
+}
+
+export const sendMessage = async ({ conversationId, message }) => {
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+
+  if (authError) throw authError
+  if (!authData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      sender_id: authData.user.id,
+      body: message.trim()
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+// -----------------------------------------------------------------------------
+// Conversation realtime
+// -----------------------------------------------------------------------------
+
 export const subscribeToConversationMessages = (conversationId, onMessage) => {
   const channel = supabase
     .channel(`conversation:${conversationId}`)
@@ -184,6 +242,10 @@ export const unsubscribeFromConversationMessages = async (channel) => {
   await supabase.removeChannel(channel)
 }
 
+// -----------------------------------------------------------------------------
+// Inbox realtime
+// -----------------------------------------------------------------------------
+
 export const subscribeToInboxMessages = (onMessage) => {
   const channelName = `inbox-messages:${crypto.randomUUID()}`
 
@@ -211,6 +273,10 @@ export const unsubscribeFromInboxMessages = async (channel) => {
   await supabase.removeChannel(channel)
 }
 
+// -----------------------------------------------------------------------------
+// Read state
+// -----------------------------------------------------------------------------
+
 export const markConversationAsRead = async (conversationId) => {
   const { data: authData, error: authError } = await supabase.auth.getUser()
 
@@ -237,4 +303,40 @@ export const getTotalUnreadCount = async () => {
   if (error) throw error
 
   return (data || []).reduce((total, conversation) => total + Number(conversation.unread_count || 0), 0)
+}
+
+// -----------------------------------------------------------------------------
+// Typing realtime
+// -----------------------------------------------------------------------------
+
+export const subscribeToConversationTyping = (conversationId, onTyping) => {
+  const channel = supabase
+    .channel(`conversation-typing:${conversationId}`)
+    .on('broadcast', { event: 'typing' }, ({ payload }) => {
+      onTyping(payload)
+    })
+    .subscribe((status) => {
+      console.log('Conversation typing realtime status:', status)
+    })
+
+  return channel
+}
+
+export const sendConversationTyping = async (channel, { userId, typing }) => {
+  if (!channel) return
+
+  await channel.send({
+    type: 'broadcast',
+    event: 'typing',
+    payload: {
+      userId,
+      typing
+    }
+  })
+}
+
+export const unsubscribeFromConversationTyping = async (channel) => {
+  if (!channel) return
+
+  await supabase.removeChannel(channel)
 }

@@ -8,7 +8,7 @@ import {
   subscribeToVibeReactions,
   unsubscribeFromVibeReactions
 } from '../../services/vibes.js'
-import { getConnectionRequestForVibe } from '../../services/connections.js'
+import { getConnectionRequestForVibe, getExistingConversationBetweenUsers } from '../../services/connections.js'
 import { formatVibeLocation } from '../../utils/formatVibeLocation.js'
 import useAuthStore from '../../stores/useAuthStore.js'
 import ConnectionRequestComposer from './ConnectionRequestComposer.jsx'
@@ -228,7 +228,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
 // Viewer
 // -----------------------------------------------------------------------------
 
-const VibeViewer = ({ vibes, initialIndex, onClose }) => {
+const VibeViewer = ({ vibes, initialIndex, onClose, onOpenConversation }) => {
   const { user } = useAuthStore()
 
   const [activeIndex, setActiveIndex] = useState(initialIndex)
@@ -257,22 +257,43 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
   const previousVibe = activeIndex > 0 ? vibes[activeIndex - 1] : null
   const nextVibe = activeIndex < vibes.length - 1 ? vibes[activeIndex + 1] : null
 
+  const canConnect = Boolean(user?.id && vibe?.id && vibe.user_id && vibe.user_id !== user.id)
+
   // ---------------------------------------------------------------------------
-  // Existing connection request
+  // Existing request for this exact Vibe
   // ---------------------------------------------------------------------------
 
-  const { data: existingConnectionRequest } = useQuery({
+  const { data: existingConnectionRequest, refetch: refetchConnectionRequest } = useQuery({
     queryKey: ['vibe-connection-request', vibe.id, user?.id],
     queryFn: () =>
       getConnectionRequestForVibe({
         vibeId: vibe.id,
         userId: user.id
       }),
-    enabled: Boolean(user?.id && vibe?.id && vibe.user_id !== user?.id),
+    enabled: canConnect,
     staleTime: 1000 * 30
   })
 
   const currentConnectionRequest = connectionRequest?.vibe_id === vibe.id ? connectionRequest : existingConnectionRequest
+
+  const connectionStatus = currentConnectionRequest?.status || null
+
+  // ---------------------------------------------------------------------------
+  // Existing conversation with this Vibe creator
+  // ---------------------------------------------------------------------------
+
+  const { data: existingCreatorConversation, refetch: refetchCreatorConversation } = useQuery({
+    queryKey: ['existing-user-conversation', user?.id, vibe.user_id],
+    queryFn: () =>
+      getExistingConversationBetweenUsers({
+        userId: user.id,
+        otherUserId: vibe.user_id
+      }),
+    enabled: canConnect,
+    staleTime: 1000 * 30
+  })
+
+  const connectedToCreator = Boolean(existingCreatorConversation?.id)
 
   // ---------------------------------------------------------------------------
   // Reactions
@@ -365,8 +386,6 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
     }
 
     if (axis === 'horizontal') {
-      // We only have an action on swipe-right for now.
-      // Swipe-left gets resistance rather than moving freely.
       const offset = deltaX < 0 ? deltaX * 0.15 : deltaX
 
       setSlideX(offset)
@@ -410,16 +429,75 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
     }, TRANSITION_DURATION)
   }
 
-  const openConnectionComposer = () => {
+  // ---------------------------------------------------------------------------
+  // Connection swipe
+  // ---------------------------------------------------------------------------
+
+  const openExistingConversation = (conversationId) => {
+    if (!conversationId) return
+
+    onClose?.()
+    onOpenConversation?.(conversationId)
+  }
+
+  const handleConnectionSwipe = async () => {
     setAnimateSlide(true)
     setSlideX(0)
 
-    if (!user) return
-    if (vibe.user_id === user.id) return
+    if (!canConnect) return
 
-    if (currentConnectionRequest) return
+    try {
+      /*
+       * Always re-check both states at the moment the swipe completes.
+       *
+       * That prevents stale React Query data from opening another composer if:
+       * - this exact Vibe was accepted meanwhile, or
+       * - these users became connected through another Vibe meanwhile.
+       */
+      const [requestResult, conversationResult] = await Promise.all([refetchConnectionRequest(), refetchCreatorConversation()])
 
-    setConnectionComposerOpen(true)
+      const freshRequest = requestResult.data
+      const freshConversation = conversationResult.data
+
+      // -----------------------------------------------------------------------
+      // Already connected as users
+      // -----------------------------------------------------------------------
+
+      if (freshConversation?.id) {
+        openExistingConversation(freshConversation.id)
+        return
+      }
+
+      // -----------------------------------------------------------------------
+      // Existing request for this exact Vibe
+      // -----------------------------------------------------------------------
+
+      if (freshRequest) {
+        if (freshRequest.status === 'accepted') {
+          const conversationId = freshRequest.conversation?.id || null
+
+          if (conversationId) {
+            openExistingConversation(conversationId)
+          }
+
+          return
+        }
+
+        /*
+         * Pending / expired / declined requests do not receive another
+         * connection attempt through the same Vibe.
+         */
+        return
+      }
+
+      // -----------------------------------------------------------------------
+      // No existing relationship
+      // -----------------------------------------------------------------------
+
+      setConnectionComposerOpen(true)
+    } catch (error) {
+      console.error('Failed to check Vibe connection state:', error)
+    }
   }
 
   const handleTouchEnd = () => {
@@ -434,7 +512,7 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
 
     if (axis === 'horizontal') {
       if (deltaX >= HORIZONTAL_SWIPE_THRESHOLD) {
-        openConnectionComposer()
+        handleConnectionSwipe()
         return
       }
 
@@ -496,6 +574,34 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
   }, [vibe.id])
 
   // ---------------------------------------------------------------------------
+  // Connection display state
+  // ---------------------------------------------------------------------------
+
+  const getConnectionSwipeLabel = () => {
+    if (connectedToCreator) return 'Open chat →'
+    if (connectionStatus === 'accepted') return 'Open chat →'
+    if (connectionStatus === 'pending') return 'Request sent'
+    if (connectionStatus === 'expired') return 'Request expired'
+    if (connectionStatus === 'declined') return 'Request declined'
+
+    return 'Connect →'
+  }
+
+  const getConnectionStateLabel = () => {
+    if (connectedToCreator) return 'Connected · Swipe right to chat'
+    if (connectionStatus === 'accepted') return 'Connected · Swipe right to chat'
+    if (connectionStatus === 'pending') return 'Request sent'
+    if (connectionStatus === 'declined') return 'Request declined'
+    if (connectionStatus === 'expired') return 'Request expired'
+
+    return null
+  }
+
+  const connectionStateLabel = getConnectionStateLabel()
+
+  const connectionSwipeAvailable = canConnect && (connectedToCreator || connectionStatus === 'accepted' || !connectionStatus)
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -541,24 +647,22 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
       )}
 
       {/* Right-swipe visual hint */}
-      {gestureAxis === 'horizontal' && slideX > 30 && !currentConnectionRequest && vibe.user_id !== user?.id && (
+      {gestureAxis === 'horizontal' && slideX > 30 && canConnect && (
         <div
           className="pointer-events-none absolute left-5 top-1/2 z-40 -translate-y-1/2 rounded-full border border-white/20 bg-black/30 px-4 py-2 text-sm font-bold text-white backdrop-blur-md"
           style={{
-            opacity: Math.min(1, slideX / HORIZONTAL_SWIPE_THRESHOLD)
+            opacity: connectionSwipeAvailable
+              ? Math.min(1, slideX / HORIZONTAL_SWIPE_THRESHOLD)
+              : Math.min(0.6, slideX / HORIZONTAL_SWIPE_THRESHOLD)
           }}>
-          Connect →
+          {getConnectionSwipeLabel()}
         </div>
       )}
 
-      {/* Existing request state */}
-      {currentConnectionRequest && (
-        <div className="pointer-events-none absolute left-1/2 top-20 z-40 -translate-x-1/2 rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md">
-          {currentConnectionRequest.status === 'accepted'
-            ? 'Connected'
-            : currentConnectionRequest.status === 'pending'
-            ? 'Request sent'
-            : 'Request expired'}
+      {/* Existing connection/request state */}
+      {connectionStateLabel && (
+        <div className="pointer-events-none absolute left-1/2 top-20 z-40 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md">
+          {connectionStateLabel}
         </div>
       )}
 

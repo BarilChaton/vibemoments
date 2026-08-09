@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
+import { App } from '@capacitor/app'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { FiArrowLeft, FiSend } from 'react-icons/fi'
 import {
   getConversation,
   getConversationMessages,
   markConversationAsRead,
+  sendConversationTyping,
   sendMessage,
   subscribeToConversationMessages,
-  unsubscribeFromConversationMessages
+  subscribeToConversationTyping,
+  unsubscribeFromConversationMessages,
+  unsubscribeFromConversationTyping
 } from '../services/connections.js'
 import useAuthStore from '../stores/useAuthStore.js'
+import useChatStore from '../stores/useChatStore.js'
 
 const MAX_MESSAGE_LENGTH = 1000
 
@@ -30,14 +35,22 @@ const formatMessageTime = (createdAt) => {
 
 const Conversation = ({ conversationId, onBack }) => {
   const { user } = useAuthStore()
+  const { setActiveConversationId } = useChatStore()
+
   const queryClient = useQueryClient()
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
+  const typingChannelRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
+  const remoteTypingTimeoutRef = useRef(null)
+  const typingRef = useRef(false)
+
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [otherUserTyping, setOtherUserTyping] = useState(false)
 
   // ---------------------------------------------------------------------------
   // Conversation
@@ -70,18 +83,123 @@ const Conversation = ({ conversationId, onBack }) => {
   })
 
   // ---------------------------------------------------------------------------
+  // Active conversation
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!conversationId) return
+
+    setActiveConversationId(conversationId)
+
+    return () => {
+      setActiveConversationId(null)
+    }
+  }, [conversationId, setActiveConversationId])
+
+  // ---------------------------------------------------------------------------
+  // Mark conversation as read
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!conversationId) return
+
+    const markRead = async () => {
+      try {
+        await markConversationAsRead(conversationId)
+
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['conversations']
+          }),
+
+          queryClient.invalidateQueries({
+            queryKey: ['total-unread-messages']
+          })
+        ])
+      } catch (error) {
+        console.error('Failed to mark conversation as read:', error)
+      }
+    }
+
+    markRead()
+  }, [conversationId, queryClient])
+
+  // ---------------------------------------------------------------------------
+  // App resume
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!conversationId) return
+
+    const refreshConversation = async () => {
+      if (!conversationId) return
+
+      try {
+        await queryClient.refetchQueries({
+          queryKey: ['conversation-messages', conversationId],
+          exact: true,
+          type: 'active'
+        })
+
+        await markConversationAsRead(conversationId)
+
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['conversations']
+          }),
+
+          queryClient.invalidateQueries({
+            queryKey: ['total-unread-messages']
+          })
+        ])
+      } catch (error) {
+        console.error('Failed to refresh conversation:', error)
+      }
+    }
+
+    let appStateListener
+
+    const setupAppStateListener = async () => {
+      appStateListener = await App.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive) return
+
+        refreshConversation()
+      })
+    }
+
+    setupAppStateListener()
+
+    return () => {
+      appStateListener?.remove()
+    }
+  }, [conversationId, queryClient])
+
+  // ---------------------------------------------------------------------------
   // Send message
   // ---------------------------------------------------------------------------
 
   const handleSend = async () => {
     const trimmed = message.trim()
 
-    if (!trimmed || sending || !conversationId) return
+    if (!trimmed || sending || !conversationId || !user) return
 
     setSending(true)
     setError('')
 
     try {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+
+      if (typingRef.current) {
+        typingRef.current = false
+
+        await sendConversationTyping(typingChannelRef.current, {
+          userId: user.id,
+          typing: false
+        })
+      }
+
       const newMessage = await sendMessage({
         conversationId,
         message: trimmed
@@ -94,6 +212,16 @@ const Conversation = ({ conversationId, onBack }) => {
 
         return [...current, newMessage]
       })
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['conversations']
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['total-unread-messages']
+        })
+      ])
 
       requestAnimationFrame(() => {
         inputRef.current?.focus()
@@ -114,6 +242,48 @@ const Conversation = ({ conversationId, onBack }) => {
   }
 
   // ---------------------------------------------------------------------------
+  // Typing
+  // ---------------------------------------------------------------------------
+
+  const handleTyping = (value) => {
+    setMessage(value)
+    setError('')
+
+    if (!user?.id || !typingChannelRef.current) return
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    if (value.trim()) {
+      if (!typingRef.current) {
+        typingRef.current = true
+
+        sendConversationTyping(typingChannelRef.current, {
+          userId: user.id,
+          typing: true
+        })
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        typingRef.current = false
+
+        sendConversationTyping(typingChannelRef.current, {
+          userId: user.id,
+          typing: false
+        })
+      }, 1200)
+    } else if (typingRef.current) {
+      typingRef.current = false
+
+      sendConversationTyping(typingChannelRef.current, {
+        userId: user.id,
+        typing: false
+      })
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Realtime messages
   // ---------------------------------------------------------------------------
 
@@ -122,7 +292,7 @@ const Conversation = ({ conversationId, onBack }) => {
 
     const channel = subscribeToConversationMessages(conversationId, async (newMessage) => {
       queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => {
-        if (current.some((message) => message.id === newMessage.id)) return current
+        if (current.some((item) => item.id === newMessage.id)) return current
 
         return [...current, newMessage]
       })
@@ -131,9 +301,15 @@ const Conversation = ({ conversationId, onBack }) => {
         try {
           await markConversationAsRead(conversationId)
 
-          queryClient.invalidateQueries({
-            queryKey: ['conversations']
-          })
+          await Promise.all([
+            queryClient.invalidateQueries({
+              queryKey: ['conversations']
+            }),
+
+            queryClient.invalidateQueries({
+              queryKey: ['total-unread-messages']
+            })
+          ])
         } catch (error) {
           console.error('Failed to update read state:', error)
         }
@@ -145,20 +321,56 @@ const Conversation = ({ conversationId, onBack }) => {
     }
   }, [conversationId, queryClient, user?.id])
 
+  // ---------------------------------------------------------------------------
+  // Realtime typing
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
-    if (!conversationId) return
+    if (!conversationId || !user?.id) return
 
-    markConversationAsRead(conversationId).catch((error) => {
-      console.error('Failed to mark conversation as read:', error)
+    const channel = subscribeToConversationTyping(conversationId, (payload) => {
+      if (payload.userId === user.id) return
+
+      if (remoteTypingTimeoutRef.current) {
+        clearTimeout(remoteTypingTimeoutRef.current)
+      }
+
+      setOtherUserTyping(payload.typing)
+
+      if (payload.typing) {
+        remoteTypingTimeoutRef.current = setTimeout(() => {
+          setOtherUserTyping(false)
+        }, 3000)
+      }
     })
 
-    queryClient.invalidateQueries({
-      queryKey: ['conversations']
-    })
-  }, [conversationId, queryClient])
+    typingChannelRef.current = channel
+
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+
+      if (remoteTypingTimeoutRef.current) {
+        clearTimeout(remoteTypingTimeoutRef.current)
+      }
+
+      if (typingRef.current) {
+        sendConversationTyping(channel, {
+          userId: user.id,
+          typing: false
+        })
+      }
+
+      unsubscribeFromConversationTyping(channel)
+
+      typingChannelRef.current = null
+      typingRef.current = false
+    }
+  }, [conversationId, user?.id])
 
   // ---------------------------------------------------------------------------
-  // Scroll to latest message
+  // Scroll to latest
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -191,7 +403,7 @@ const Conversation = ({ conversationId, onBack }) => {
   if (conversationError) {
     return (
       <div className="flex flex-1 flex-col">
-        <header className="safe-top flex items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-3">
+        <header className="safe-top flex items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-5">
           <button
             className="flex size-10 items-center justify-center rounded-full text-vibe-petrol transition active:scale-95"
             type="button"
@@ -221,7 +433,7 @@ const Conversation = ({ conversationId, onBack }) => {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-vibe-bg">
       {/* Header */}
-      <header className="safe-top z-20 flex shrink-0 items-center gap-3 border-b px-4 pb-3 pt-3 border-vibe-petrol/10 bg-vibe-surface ">
+      <header className="safe-top z-20 flex shrink-0 items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-5">
         <button
           className="flex size-10 shrink-0 items-center justify-center rounded-full text-vibe-petrol transition active:scale-95"
           type="button"
@@ -244,7 +456,7 @@ const Conversation = ({ conversationId, onBack }) => {
       </header>
 
       {/* Messages */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-7">
         {messagesLoading && (
           <div className="flex justify-center py-10">
             <div className="size-3 animate-pulse rounded-full bg-vibe-lime" />
@@ -276,7 +488,7 @@ const Conversation = ({ conversationId, onBack }) => {
 
             return (
               <div key={item.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} ${previousMine ? 'mt-0' : 'mt-3'}`}>
-                <div className={`max-w-[82%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
+                <div className={`flex max-w-[82%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
                   <div
                     className={`rounded-2xl px-4 py-2.5 ${
                       mine ? 'rounded-br-md bg-vibe-petrol text-vibe-surface' : 'rounded-bl-md bg-vibe-surface text-vibe-text'
@@ -294,6 +506,22 @@ const Conversation = ({ conversationId, onBack }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Typing indicator */}
+      <div className="h-6 shrink-0 px-5">
+        <div
+          className={`flex items-center gap-1.5 text-xs font-medium text-vibe-muted transition-opacity duration-200 ${
+            otherUserTyping ? 'opacity-100' : 'opacity-0'
+          }`}>
+          <div className="flex gap-1">
+            <span className="size-1.5 animate-bounce rounded-full bg-vibe-apricot" />
+            <span className="size-1.5 animate-bounce rounded-full bg-vibe-apricot [animation-delay:150ms]" />
+            <span className="size-1.5 animate-bounce rounded-full bg-vibe-apricot [animation-delay:300ms]" />
+          </div>
+
+          <span>{otherUser?.display_name || 'Someone'} is typing...</span>
+        </div>
+      </div>
+
       {/* Error */}
       {error && <div className="shrink-0 px-4 py-2 text-center text-xs font-medium text-red-500">{error}</div>}
 
@@ -308,10 +536,7 @@ const Conversation = ({ conversationId, onBack }) => {
             maxLength={MAX_MESSAGE_LENGTH}
             rows={1}
             disabled={sending}
-            onChange={(event) => {
-              setMessage(event.target.value)
-              setError('')
-            }}
+            onChange={(event) => handleTyping(event.target.value)}
             onKeyDown={handleKeyDown}
           />
 
