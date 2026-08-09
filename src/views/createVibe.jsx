@@ -26,8 +26,8 @@ const getVideoDuration = (videoUrl) => {
 
     video.onloadedmetadata = () => {
       const duration = video.duration
-      video.remove()
 
+      video.remove()
       resolve(duration)
     }
 
@@ -54,7 +54,6 @@ const createVideoThumbnail = (videoUrl, seekTime = 0.5, maxWidth = 600, quality 
 
     video.onseeked = () => {
       const scale = Math.min(1, maxWidth / video.videoWidth)
-
       const width = Math.round(video.videoWidth * scale)
       const height = Math.round(video.videoHeight * scale)
 
@@ -159,29 +158,33 @@ const CreateVibe = ({ onPublished }) => {
       const video = await Camera.recordVideo({
         saveToGallery: false,
         isPersistent: true,
-        includeMetadata: true
+        includeMetadata: true,
+        duration: MAX_VIDEO_DURATION
       })
 
       console.log('Recorded video:', video)
 
       if (!video.webPath) throw new Error('The camera did not return a usable video.')
 
-      const duration = video.metadata?.duration ?? 0
+      const duration = video.metadata?.duration || (await getVideoDuration(video.webPath))
       const format = video.metadata?.format || 'mp4'
 
       if (duration > MAX_VIDEO_DURATION + VIDEO_DURATION_TOLERANCE) {
         throw new Error(`Videos can be a maximum of ${MAX_VIDEO_DURATION} seconds.`)
       }
 
+      const thumbnailFile = await createVideoThumbnail(video.webPath)
+      const thumbnailUrl = URL.createObjectURL(thumbnailFile)
+
       setMedia({
         type: 'video',
         webPath: video.webPath,
         uri: video.uri,
         format,
-        duration
+        duration,
+        thumbnailFile,
+        thumbnailUrl
       })
-
-      console.log('Recorded video:', video)
     } catch (error) {
       if (error?.message?.toLowerCase().includes('cancel')) return
 
@@ -191,6 +194,8 @@ const CreateVibe = ({ onPublished }) => {
   }
 
   const removeMedia = () => {
+    if (media?.thumbnailUrl) URL.revokeObjectURL(media.thumbnailUrl)
+
     setMedia(null)
     setCaption('')
     setSelectedInterests([])
@@ -217,6 +222,8 @@ const CreateVibe = ({ onPublished }) => {
 
   const getThumbnailFile = async () => {
     if (media.type === 'photo') return createImageThumbnail(media.webPath)
+
+    if (media.thumbnailFile) return media.thumbnailFile
 
     return createVideoThumbnail(media.webPath)
   }
@@ -260,7 +267,6 @@ const CreateVibe = ({ onPublished }) => {
   const toggleInterest = (interestId) => {
     setSelectedInterests((current) => {
       if (current.includes(interestId)) return current.filter((id) => id !== interestId)
-
       if (current.length >= MAX_INTERESTS) return current
 
       return [...current, interestId]
@@ -331,6 +337,8 @@ const CreateVibe = ({ onPublished }) => {
         interestIds: selectedInterests
       })
 
+      if (media.thumbnailUrl) URL.revokeObjectURL(media.thumbnailUrl)
+
       setMedia(null)
       setCaption('')
       setSelectedInterests([])
@@ -358,7 +366,6 @@ const CreateVibe = ({ onPublished }) => {
         const random = await getRandomInterests(15)
 
         setUserInterests(own)
-
         setOtherInterests(random.filter((interest) => !own.some((userInterest) => userInterest.id === interest.id)))
       } catch (error) {
         console.error('Failed to load interests:', error)
@@ -367,6 +374,16 @@ const CreateVibe = ({ onPublished }) => {
 
     loadInterests()
   }, [user])
+
+  // ---------------------------------------------------------------------------
+  // Object URL cleanup
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    return () => {
+      if (media?.thumbnailUrl) URL.revokeObjectURL(media.thumbnailUrl)
+    }
+  }, [media])
 
   // ---------------------------------------------------------------------------
   // Capture screen
@@ -445,7 +462,18 @@ const CreateVibe = ({ onPublished }) => {
 
           {media.type === 'video' && (
             <>
-              <video className="aspect-4/5 w-full object-cover" src={media.webPath} controls playsInline preload="metadata" />
+              {media.thumbnailUrl && <img className="absolute inset-0 h-full w-full object-cover" src={media.thumbnailUrl} alt="" />}
+
+              <video
+                className="relative aspect-4/5 w-full object-cover"
+                src={media.webPath}
+                poster={media.thumbnailUrl || undefined}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+              />
 
               <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
                 {Math.min(media.duration || 0, MAX_VIDEO_DURATION).toFixed(1)}s
