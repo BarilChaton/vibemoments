@@ -4,6 +4,7 @@ import { FiArrowLeft, FiSend } from 'react-icons/fi'
 import {
   getConversation,
   getConversationMessages,
+  markConversationAsRead,
   sendMessage,
   subscribeToConversationMessages,
   unsubscribeFromConversationMessages
@@ -119,17 +120,41 @@ const Conversation = ({ conversationId, onBack }) => {
   useEffect(() => {
     if (!conversationId) return
 
-    const channel = subscribeToConversationMessages(conversationId, (newMessage) => {
+    const channel = subscribeToConversationMessages(conversationId, async (newMessage) => {
       queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => {
         if (current.some((message) => message.id === newMessage.id)) return current
 
         return [...current, newMessage]
       })
+
+      if (newMessage.sender_id !== user?.id) {
+        try {
+          await markConversationAsRead(conversationId)
+
+          queryClient.invalidateQueries({
+            queryKey: ['conversations']
+          })
+        } catch (error) {
+          console.error('Failed to update read state:', error)
+        }
+      }
     })
 
     return () => {
       unsubscribeFromConversationMessages(channel)
     }
+  }, [conversationId, queryClient, user?.id])
+
+  useEffect(() => {
+    if (!conversationId) return
+
+    markConversationAsRead(conversationId).catch((error) => {
+      console.error('Failed to mark conversation as read:', error)
+    })
+
+    queryClient.invalidateQueries({
+      queryKey: ['conversations']
+    })
   }, [conversationId, queryClient])
 
   // ---------------------------------------------------------------------------

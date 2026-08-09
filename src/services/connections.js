@@ -71,40 +71,16 @@ export const acceptConnectionRequest = async ({ requestId, reply }) => {
 }
 
 export const getConversations = async () => {
-  const { data: authData, error: authError } = await supabase.auth.getUser()
-
-  if (authError) throw authError
-  if (!authData.user) return []
-
-  const userId = authData.user.id
-
-  const { data, error } = await supabase
-    .from('conversations')
-    .select(
-      `
-      id,
-      connection_request_id,
-      user_a_id,
-      user_b_id,
-      created_at,
-      user_a:profiles!conversations_user_a_id_fkey (
-        id,
-        display_name
-      ),
-      user_b:profiles!conversations_user_b_id_fkey (
-        id,
-        display_name
-      )
-    `
-    )
-    .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
-    .order('created_at', { ascending: false })
+  const { data, error } = await supabase.rpc('get_conversation_summaries')
 
   if (error) throw error
 
-  return data.map((conversation) => ({
+  return (data || []).map((conversation) => ({
     ...conversation,
-    otherUser: conversation.user_a_id === userId ? conversation.user_b : conversation.user_a
+    otherUser: {
+      id: conversation.other_user_id,
+      display_name: conversation.other_user_display_name
+    }
   }))
 }
 
@@ -206,4 +182,59 @@ export const unsubscribeFromConversationMessages = async (channel) => {
   if (!channel) return
 
   await supabase.removeChannel(channel)
+}
+
+export const subscribeToInboxMessages = (onMessage) => {
+  const channelName = `inbox-messages:${crypto.randomUUID()}`
+
+  return supabase
+    .channel(channelName)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      },
+      (payload) => {
+        onMessage(payload.new)
+      }
+    )
+    .subscribe((status) => {
+      console.log('Inbox realtime status:', status)
+    })
+}
+
+export const unsubscribeFromInboxMessages = async (channel) => {
+  if (!channel) return
+
+  await supabase.removeChannel(channel)
+}
+
+export const markConversationAsRead = async (conversationId) => {
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+
+  if (authError) throw authError
+  if (!authData.user) throw new Error('Not authenticated')
+
+  const { error } = await supabase.from('conversation_reads').upsert(
+    {
+      conversation_id: conversationId,
+      user_id: authData.user.id,
+      last_read_at: new Date().toISOString()
+    },
+    {
+      onConflict: 'conversation_id,user_id'
+    }
+  )
+
+  if (error) throw error
+}
+
+export const getTotalUnreadCount = async () => {
+  const { data, error } = await supabase.rpc('get_conversation_summaries')
+
+  if (error) throw error
+
+  return (data || []).reduce((total, conversation) => total + Number(conversation.unread_count || 0), 0)
 }

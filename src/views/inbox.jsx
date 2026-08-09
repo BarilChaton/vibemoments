@@ -4,6 +4,35 @@ import { getConversations, getIncomingConnectionRequests } from '../services/con
 import ConnectionRequestCard from '../components/inbox/ConnectionRequestCard.jsx'
 import Conversation from './Conversation.jsx'
 
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+const formatConversationTime = (createdAt) => {
+  if (!createdAt) return ''
+
+  const date = new Date(createdAt)
+  const now = new Date()
+
+  const sameDay = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+
+  if (sameDay) {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric'
+  }).format(date)
+}
+
+// -----------------------------------------------------------------------------
+// Component
+// -----------------------------------------------------------------------------
+
 const Inbox = () => {
   const queryClient = useQueryClient()
 
@@ -39,7 +68,7 @@ const Inbox = () => {
   })
 
   // ---------------------------------------------------------------------------
-  // Open conversation
+  // Conversation navigation
   // ---------------------------------------------------------------------------
 
   const handleOpenConversation = (conversationId) => {
@@ -61,8 +90,13 @@ const Inbox = () => {
       queryClient.invalidateQueries({
         queryKey: ['incoming-connection-requests']
       }),
+
       queryClient.invalidateQueries({
         queryKey: ['conversations']
+      }),
+
+      queryClient.invalidateQueries({
+        queryKey: ['total-unread-messages']
       })
     ])
 
@@ -90,7 +124,9 @@ const Inbox = () => {
       {/* Header */}
       <header className="safe-top shrink-0 px-6 pb-4 pt-5">
         <p className="text-sm font-semibold text-vibe-apricot-dark">CONNECTIONS</p>
+
         <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Inbox</h1>
+
         <p className="mt-2 text-sm text-vibe-muted">Requests and conversations started through nearby Vibes.</p>
       </header>
 
@@ -133,6 +169,7 @@ const Inbox = () => {
             {requestsError && (
               <div className="py-10 text-center">
                 <p className="text-sm font-medium text-red-500">Could not load your requests.</p>
+
                 <p className="mt-2 text-xs text-vibe-muted">{requestsError.message}</p>
               </div>
             )}
@@ -173,6 +210,7 @@ const Inbox = () => {
             {conversationsError && (
               <div className="py-10 text-center">
                 <p className="text-sm font-medium text-red-500">Could not load your conversations.</p>
+
                 <p className="mt-2 text-xs text-vibe-muted">{conversationsError.message}</p>
               </div>
             )}
@@ -196,6 +234,7 @@ const Inbox = () => {
                 {conversations.map((conversation) => {
                   const displayName = conversation.otherUser?.display_name || 'Conversation'
                   const initial = displayName.slice(0, 1).toUpperCase()
+                  const unreadCount = Number(conversation.unread_count || 0)
 
                   return (
                     <button
@@ -211,15 +250,38 @@ const Inbox = () => {
                       {/* Information */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="truncate font-bold text-vibe-petrol">{displayName}</p>
-                          <div className="size-1.5 shrink-0 rounded-full bg-vibe-lime" />
+                          <p className={`truncate text-vibe-petrol ${unreadCount > 0 ? 'font-black' : 'font-bold'}`}>{displayName}</p>
+
+                          {unreadCount > 0 && <div className="size-2 shrink-0 rounded-full bg-vibe-apricot" />}
                         </div>
 
-                        <p className="mt-1 truncate text-xs text-vibe-muted">Chat unlocked through a Vibe</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <p
+                            className={`min-w-0 flex-1 truncate text-xs ${
+                              unreadCount > 0 ? 'font-semibold text-vibe-text' : 'text-vibe-muted'
+                            }`}>
+                            {conversation.last_message_body || 'Chat unlocked through a Vibe'}
+                          </p>
+
+                          {conversation.last_message_at && (
+                            <span
+                              className={`shrink-0 text-[11px] ${
+                                unreadCount > 0 ? 'font-semibold text-vibe-apricot-dark' : 'text-vibe-muted'
+                              }`}>
+                              {formatConversationTime(conversation.last_message_at)}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Arrow */}
-                      <span className="shrink-0 text-xl text-vibe-muted">›</span>
+                      {/* Unread badge */}
+                      {unreadCount > 0 ? (
+                        <div className="flex min-w-6 shrink-0 items-center justify-center rounded-full bg-vibe-apricot px-2 py-1 text-[11px] font-black text-vibe-text">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </div>
+                      ) : (
+                        <span className="shrink-0 text-xl text-vibe-muted">›</span>
+                      )}
                     </button>
                   )
                 })}

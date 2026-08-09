@@ -1,6 +1,11 @@
+import { useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { FiHome, FiMessageCircle, FiPlus, FiUser, FiUsers } from 'react-icons/fi'
+import { getTotalUnreadCount, subscribeToInboxMessages, unsubscribeFromInboxMessages } from '../../services/connections.js'
 
 const BottomNavigation = ({ activeView, onChange }) => {
+  const queryClient = useQueryClient()
+
   const items = [
     { id: 'home', label: 'Vibes', icon: FiHome },
     { id: 'friends', label: 'Friends', icon: FiUsers },
@@ -9,6 +14,40 @@ const BottomNavigation = ({ activeView, onChange }) => {
     { id: 'profile', label: 'Profile', icon: FiUser }
   ]
 
+  // ---------------------------------------------------------------------------
+  // Unread messages
+  // ---------------------------------------------------------------------------
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['total-unread-messages'],
+    queryFn: getTotalUnreadCount,
+    staleTime: 1000 * 15
+  })
+
+  // ---------------------------------------------------------------------------
+  // Global realtime message listener
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    const channel = subscribeToInboxMessages(() => {
+      queryClient.invalidateQueries({
+        queryKey: ['conversations']
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: ['total-unread-messages']
+      })
+    })
+
+    return () => {
+      unsubscribeFromInboxMessages(channel)
+    }
+  }, [queryClient])
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <nav className="safe-bottom relative z-40 border-t border-vibe-petrol/10 bg-vibe-surface">
       <div className="mx-auto flex h-17 w-full max-w-md items-center justify-around px-2">
@@ -16,6 +55,7 @@ const BottomNavigation = ({ activeView, onChange }) => {
           const Icon = item.icon
           const active = activeView === item.id
           const create = item.id === 'create'
+          const inbox = item.id === 'inbox'
 
           if (create) {
             return (
@@ -41,7 +81,16 @@ const BottomNavigation = ({ activeView, onChange }) => {
               key={item.id}
               type="button"
               onClick={() => onChange(item.id)}>
-              <Icon className="text-2xl" />
+              <div className="relative">
+                <Icon className="text-2xl" />
+
+                {inbox && unreadCount > 0 && (
+                  <div className="absolute -right-2.5 -top-2 flex min-w-4.5 items-center justify-center rounded-full bg-vibe-apricot px-1 text-[9px] font-black leading-4.5 text-vibe-text shadow-sm">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </div>
+                )}
+              </div>
+
               <span className="text-[11px] font-semibold">{item.label}</span>
             </button>
           )
