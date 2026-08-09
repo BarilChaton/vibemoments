@@ -8,11 +8,16 @@ import {
   subscribeToVibeReactions,
   unsubscribeFromVibeReactions
 } from '../../services/vibes.js'
+import { getConnectionRequestForVibe } from '../../services/connections.js'
 import { formatVibeLocation } from '../../utils/formatVibeLocation.js'
 import useAuthStore from '../../stores/useAuthStore.js'
+import ConnectionRequestComposer from './ConnectionRequestComposer.jsx'
 
 const REACTIONS = ['❤️', '😂', '🔥', '😍', '👏', '😮']
-const SWIPE_THRESHOLD = 70
+
+const VERTICAL_SWIPE_THRESHOLD = 70
+const HORIZONTAL_SWIPE_THRESHOLD = 90
+const GESTURE_LOCK_THRESHOLD = 12
 const TRANSITION_DURATION = 280
 
 // -----------------------------------------------------------------------------
@@ -59,6 +64,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
   })
 
   const fallbackImage = vibe.thumbnail_url || vibe.media_url || null
+
   const photoUrl = vibe.media_type === 'photo' ? data?.mediaUrl || fallbackImage : null
   const videoUrl = vibe.media_type === 'video' ? data?.mediaUrl : null
 
@@ -70,9 +76,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
     if (active) {
       video.currentTime = 0
 
-      video.play().catch((error) => {
-        console.log('Video autoplay was prevented:', error)
-      })
+      video.play().catch(() => {})
     } else {
       video.pause()
     }
@@ -80,10 +84,8 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
-      {/* Photo */}
       {vibe.media_type === 'photo' && photoUrl && <img className="absolute inset-0 h-full w-full object-cover" src={photoUrl} alt="" />}
 
-      {/* Video thumbnail / poster */}
       {vibe.media_type === 'video' && fallbackImage && (
         <img
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${
@@ -94,7 +96,6 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
         />
       )}
 
-      {/* Video */}
       {vibe.media_type === 'video' && videoUrl && (
         <video
           ref={videoRef}
@@ -110,7 +111,6 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
         />
       )}
 
-      {/* Loading fallback */}
       {isLoading && !fallbackImage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black">
           <div className="text-center">
@@ -120,7 +120,6 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
         </div>
       )}
 
-      {/* Error */}
       {error && !fallbackImage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black px-6 text-center text-white">
           <div>
@@ -130,7 +129,6 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
         </div>
       )}
 
-      {/* Background readability gradient */}
       <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-black/65" />
 
       {active && (
@@ -153,7 +151,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
             </div>
           </div>
 
-          {/* Floating live reactions */}
+          {/* Floating reactions */}
           <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
             {floatingReactions.map((reaction) => (
               <span
@@ -235,18 +233,46 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
 
   const [activeIndex, setActiveIndex] = useState(initialIndex)
 
+  const [touchStartX, setTouchStartX] = useState(null)
   const [touchStartY, setTouchStartY] = useState(null)
+
+  const [touchCurrentX, setTouchCurrentX] = useState(null)
   const [touchCurrentY, setTouchCurrentY] = useState(null)
 
+  const [gestureAxis, setGestureAxis] = useState(null)
+
+  const [slideX, setSlideX] = useState(0)
   const [slideY, setSlideY] = useState(0)
+
   const [animateSlide, setAnimateSlide] = useState(false)
   const [transitioning, setTransitioning] = useState(false)
 
   const [floatingReactions, setFloatingReactions] = useState([])
 
+  const [connectionComposerOpen, setConnectionComposerOpen] = useState(false)
+  const [connectionRequest, setConnectionRequest] = useState(null)
+
   const vibe = vibes[activeIndex]
+
   const previousVibe = activeIndex > 0 ? vibes[activeIndex - 1] : null
   const nextVibe = activeIndex < vibes.length - 1 ? vibes[activeIndex + 1] : null
+
+  // ---------------------------------------------------------------------------
+  // Existing connection request
+  // ---------------------------------------------------------------------------
+
+  const { data: existingConnectionRequest } = useQuery({
+    queryKey: ['vibe-connection-request', vibe.id, user?.id],
+    queryFn: () =>
+      getConnectionRequestForVibe({
+        vibeId: vibe.id,
+        userId: user.id
+      }),
+    enabled: Boolean(user?.id && vibe?.id && vibe.user_id !== user?.id),
+    staleTime: 1000 * 30
+  })
+
+  const currentConnectionRequest = connectionRequest?.vibe_id === vibe.id ? connectionRequest : existingConnectionRequest
 
   // ---------------------------------------------------------------------------
   // Reactions
@@ -283,30 +309,69 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
   }
 
   // ---------------------------------------------------------------------------
-  // Swipe gestures
+  // Gestures
   // ---------------------------------------------------------------------------
 
-  const handleTouchStart = (event) => {
-    if (transitioning) return
+  const resetGesture = () => {
+    setTouchStartX(null)
+    setTouchStartY(null)
+    setTouchCurrentX(null)
+    setTouchCurrentY(null)
+    setGestureAxis(null)
+  }
 
-    const y = event.touches[0].clientY
+  const handleTouchStart = (event) => {
+    if (transitioning || connectionComposerOpen) return
+
+    const touch = event.touches[0]
 
     setAnimateSlide(false)
-    setTouchStartY(y)
-    setTouchCurrentY(y)
+
+    setTouchStartX(touch.clientX)
+    setTouchStartY(touch.clientY)
+
+    setTouchCurrentX(touch.clientX)
+    setTouchCurrentY(touch.clientY)
+
+    setGestureAxis(null)
   }
 
   const handleTouchMove = (event) => {
-    if (touchStartY === null || transitioning) return
+    if (touchStartX === null || touchStartY === null || transitioning || connectionComposerOpen) return
 
-    const y = event.touches[0].clientY
-    let offset = y - touchStartY
+    const touch = event.touches[0]
 
-    if (activeIndex === 0 && offset > 0) offset *= 0.2
-    if (activeIndex === vibes.length - 1 && offset < 0) offset *= 0.2
+    const deltaX = touch.clientX - touchStartX
+    const deltaY = touch.clientY - touchStartY
 
-    setTouchCurrentY(y)
-    setSlideY(offset)
+    setTouchCurrentX(touch.clientX)
+    setTouchCurrentY(touch.clientY)
+
+    let axis = gestureAxis
+
+    if (!axis && (Math.abs(deltaX) > GESTURE_LOCK_THRESHOLD || Math.abs(deltaY) > GESTURE_LOCK_THRESHOLD)) {
+      axis = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical'
+      setGestureAxis(axis)
+    }
+
+    if (axis === 'vertical') {
+      let offset = deltaY
+
+      if (activeIndex === 0 && offset > 0) offset *= 0.2
+      if (activeIndex === vibes.length - 1 && offset < 0) offset *= 0.2
+
+      setSlideY(offset)
+      setSlideX(0)
+    }
+
+    if (axis === 'horizontal') {
+      // We only have an action on swipe-right for now.
+      // Swipe-left gets resistance rather than moving freely.
+      const offset = deltaX < 0 ? deltaX * 0.15 : deltaX
+
+      setSlideX(offset)
+      setSlideY(0)
+    }
   }
 
   const changeVibe = (direction) => {
@@ -329,9 +394,13 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
 
     setTimeout(() => {
       setAnimateSlide(false)
+
       setActiveIndex(nextIndex)
       setFloatingReactions([])
+      setConnectionRequest(null)
+
       setSlideY(0)
+      setSlideX(0)
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -341,33 +410,75 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
     }, TRANSITION_DURATION)
   }
 
+  const openConnectionComposer = () => {
+    setAnimateSlide(true)
+    setSlideX(0)
+
+    if (!user) return
+    if (vibe.user_id === user.id) return
+
+    if (currentConnectionRequest) return
+
+    setConnectionComposerOpen(true)
+  }
+
   const handleTouchEnd = () => {
-    if (touchStartY === null || touchCurrentY === null || transitioning) return
+    if (transitioning) return
 
-    const delta = touchStartY - touchCurrentY
+    const deltaX = touchStartX !== null && touchCurrentX !== null ? touchCurrentX - touchStartX : 0
+    const deltaY = touchStartY !== null && touchCurrentY !== null ? touchStartY - touchCurrentY : 0
 
-    setTouchStartY(null)
-    setTouchCurrentY(null)
+    const axis = gestureAxis
 
-    if (delta > SWIPE_THRESHOLD) {
-      changeVibe('up')
+    resetGesture()
+
+    if (axis === 'horizontal') {
+      if (deltaX >= HORIZONTAL_SWIPE_THRESHOLD) {
+        openConnectionComposer()
+        return
+      }
+
+      setAnimateSlide(true)
+      setSlideX(0)
       return
     }
 
-    if (delta < -SWIPE_THRESHOLD) {
-      changeVibe('down')
-      return
+    if (axis === 'vertical') {
+      if (deltaY > VERTICAL_SWIPE_THRESHOLD) {
+        changeVibe('up')
+        return
+      }
+
+      if (deltaY < -VERTICAL_SWIPE_THRESHOLD) {
+        changeVibe('down')
+        return
+      }
     }
 
     setAnimateSlide(true)
+    setSlideX(0)
     setSlideY(0)
   }
 
   const handleTouchCancel = () => {
-    setTouchStartY(null)
-    setTouchCurrentY(null)
+    resetGesture()
+
     setAnimateSlide(true)
+    setSlideX(0)
     setSlideY(0)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Connection request
+  // ---------------------------------------------------------------------------
+
+  const handleConnectionSent = (request) => {
+    setConnectionRequest({
+      ...request,
+      vibe_id: vibe.id
+    })
+
+    setConnectionComposerOpen(false)
   }
 
   // ---------------------------------------------------------------------------
@@ -411,7 +522,7 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
       <div
         className={`absolute inset-0 ${animateSlide ? 'transition-transform ease-out' : ''}`}
         style={{
-          transform: `translate3d(0, ${slideY}px, 0)`,
+          transform: `translate3d(${slideX}px, ${slideY}px, 0)`,
           transitionDuration: animateSlide ? `${TRANSITION_DURATION}ms` : '0ms'
         }}>
         <VibeSlide key={vibe.id} vibe={vibe} active floatingReactions={floatingReactions} onClose={onClose} onReaction={handleReaction} />
@@ -429,6 +540,28 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
         </div>
       )}
 
+      {/* Right-swipe visual hint */}
+      {gestureAxis === 'horizontal' && slideX > 30 && !currentConnectionRequest && vibe.user_id !== user?.id && (
+        <div
+          className="pointer-events-none absolute left-5 top-1/2 z-40 -translate-y-1/2 rounded-full border border-white/20 bg-black/30 px-4 py-2 text-sm font-bold text-white backdrop-blur-md"
+          style={{
+            opacity: Math.min(1, slideX / HORIZONTAL_SWIPE_THRESHOLD)
+          }}>
+          Connect →
+        </div>
+      )}
+
+      {/* Existing request state */}
+      {currentConnectionRequest && (
+        <div className="pointer-events-none absolute left-1/2 top-20 z-40 -translate-x-1/2 rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md">
+          {currentConnectionRequest.status === 'accepted'
+            ? 'Connected'
+            : currentConnectionRequest.status === 'pending'
+            ? 'Request sent'
+            : 'Request expired'}
+        </div>
+      )}
+
       {/* Position indicator */}
       <div className="pointer-events-none absolute right-3 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-1.5">
         {vibes.slice(Math.max(0, activeIndex - 2), activeIndex + 3).map((item) => {
@@ -442,6 +575,11 @@ const VibeViewer = ({ vibes, initialIndex, onClose }) => {
           )
         })}
       </div>
+
+      {/* Connection composer */}
+      {connectionComposerOpen && (
+        <ConnectionRequestComposer vibe={vibe} onClose={() => setConnectionComposerOpen(false)} onSent={handleConnectionSent} />
+      )}
     </div>
   )
 }
