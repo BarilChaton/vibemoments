@@ -56,3 +56,29 @@ export const getFriends = async () => {
   if (error) throw error
   return data || []
 }
+
+// -----------------------------------------------------------------------------
+// Friend profile
+// -----------------------------------------------------------------------------
+
+export const getFriendProfile = async (friendId) => {
+  const { data, error } = await supabase.rpc('get_friend_profile', {
+    target_friend_id: friendId
+  })
+
+  if (error) throw error
+  return data
+}
+
+// -----------------------------------------------------------------------------
+// Remove friend
+// -----------------------------------------------------------------------------
+
+export const removeFriend = async (friendId) => {
+  const { data, error } = await supabase.rpc('remove_friendship', {
+    target_friend_id: friendId
+  })
+
+  if (error) throw error
+  return data
+}

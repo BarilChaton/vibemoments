@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { FiMessageCircle, FiRefreshCw, FiUsers } from 'react-icons/fi'
 import { getFriends } from '../services/friends.js'
+import UserProfile from './UserProfile.jsx'
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -20,6 +22,8 @@ const formatFriendsSince = (createdAt) => {
 // -----------------------------------------------------------------------------
 
 const Friends = ({ onOpenConversation }) => {
+  const [selectedFriendId, setSelectedFriendId] = useState(null)
+
   const {
     data: friends = [],
     isLoading,
@@ -33,13 +37,18 @@ const Friends = ({ onOpenConversation }) => {
   })
 
   // ---------------------------------------------------------------------------
-  // Open conversation
+  // Friend profile
   // ---------------------------------------------------------------------------
 
-  const handleOpenConversation = (conversationId) => {
-    if (!conversationId) return
-
-    onOpenConversation?.(conversationId)
+  if (selectedFriendId) {
+    return (
+      <UserProfile
+        friendId={selectedFriendId}
+        onBack={() => setSelectedFriendId(null)}
+        onOpenConversation={onOpenConversation}
+        onRemoved={() => setSelectedFriendId(null)}
+      />
+    )
   }
 
   // ---------------------------------------------------------------------------
@@ -119,41 +128,42 @@ const Friends = ({ onOpenConversation }) => {
               const initial = displayName.slice(0, 1).toUpperCase()
 
               return (
-                <button
-                  key={friend.friendship_id}
-                  className="flex w-full items-center gap-3 rounded-3xl bg-vibe-surface p-4 text-left shadow-sm transition active:scale-[0.99]"
-                  type="button"
-                  disabled={!friend.conversation_id}
-                  onClick={() => handleOpenConversation(friend.conversation_id)}>
-                  {/* Avatar */}
-                  {friend.avatar_url ? (
-                    <img className="size-13 shrink-0 rounded-full object-cover" src={friend.avatar_url} alt="" />
-                  ) : (
-                    <div className="flex size-13 shrink-0 items-center justify-center rounded-full bg-vibe-petrol text-lg font-black text-vibe-surface">
-                      {initial}
+                <div key={friend.friendship_id} className="flex items-center gap-3 rounded-3xl bg-vibe-surface p-4 shadow-sm">
+                  {/* Profile */}
+                  <button
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:scale-[0.99]"
+                    type="button"
+                    onClick={() => setSelectedFriendId(friend.friend_id)}>
+                    {friend.avatar_url ? (
+                      <img className="size-13 shrink-0 rounded-full object-cover" src={friend.avatar_url} alt="" />
+                    ) : (
+                      <div className="flex size-13 shrink-0 items-center justify-center rounded-full bg-vibe-petrol text-lg font-black text-vibe-surface">
+                        {initial}
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-black text-vibe-petrol">{displayName}</p>
+                        <div className="size-1.5 shrink-0 rounded-full bg-vibe-lime" />
+                      </div>
+
+                      {friend.username && <p className="mt-0.5 truncate text-xs font-medium text-vibe-muted">@{friend.username}</p>}
+
+                      <p className="mt-1 text-xs text-vibe-muted">Friends since {formatFriendsSince(friend.friends_since)}</p>
                     </div>
-                  )}
-
-                  {/* Identity */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-black text-vibe-petrol">{displayName}</p>
-
-                      <div className="size-1.5 shrink-0 rounded-full bg-vibe-lime" />
-                    </div>
-
-                    {friend.username && <p className="mt-0.5 truncate text-xs font-medium text-vibe-muted">@{friend.username}</p>}
-
-                    <p className="mt-1 text-xs text-vibe-muted">Friends since {formatFriendsSince(friend.friends_since)}</p>
-                  </div>
+                  </button>
 
                   {/* Chat */}
                   {friend.conversation_id && (
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-vibe-apricot/20 text-vibe-apricot-dark">
+                    <button
+                      className="flex size-11 shrink-0 items-center justify-center rounded-full bg-vibe-apricot/20 text-vibe-apricot-dark transition active:scale-90"
+                      type="button"
+                      onClick={() => onOpenConversation?.(friend.conversation_id)}>
                       <FiMessageCircle />
-                    </div>
+                    </button>
                   )}
-                </button>
+                </div>
               )
             })}
           </div>
