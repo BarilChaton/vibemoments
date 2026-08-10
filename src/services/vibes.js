@@ -9,6 +9,7 @@ const VIBE_BUCKET = 'vibes'
 const DEFAULT_RADIUS_METERS = 5000
 const DEFAULT_FEED_LIMIT = 50
 const SIGNED_URL_EXPIRY = 60 * 60
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
 // -----------------------------------------------------------------------------
 // Media
@@ -19,6 +20,12 @@ const getFileExtension = (file, fallback) => {
 }
 
 export const uploadVibeMedia = async ({ userId, vibeId, file, mediaType, filename = null }) => {
+  if (!file) throw new Error('No media file provided.')
+
+  if (file.size > MAX_UPLOAD_SIZE) {
+    throw new Error('Vibe media can be a maximum of 50 MB.')
+  }
+
   const extension = getFileExtension(file, mediaType === 'video' ? 'mp4' : 'jpg')
   const finalFilename = filename || `${mediaType}.${extension}`
   const path = `${userId}/${vibeId}/${finalFilename}`
@@ -209,6 +216,12 @@ export const publishVibe = async ({
   locationCity = null,
   interestIds = []
 }) => {
+  if (!file) throw new Error('No media file provided.')
+
+  if (file.size > MAX_UPLOAD_SIZE) {
+    throw new Error('Vibe media can be a maximum of 50 MB.')
+  }
+
   const vibeId = crypto.randomUUID()
 
   let mediaPath = null

@@ -9,8 +9,9 @@ import { createImageThumbnail } from '../utils/createImageThumbnail.js'
 import useAuthStore from '../stores/useAuthStore.js'
 
 const MAX_INTERESTS = 5
-const MAX_VIDEO_DURATION = 10
+const MAX_VIDEO_DURATION = 30
 const VIDEO_DURATION_TOLERANCE = 0.5
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
 
 // -----------------------------------------------------------------------------
 // Video helpers
@@ -215,9 +216,15 @@ const CreateVibe = ({ onPublished }) => {
     const blob = await response.blob()
     const fallbackType = media.type === 'video' ? 'video/mp4' : `image/${media.format}`
 
-    return new File([blob], `vibe-${Date.now()}.${media.format}`, {
+    const file = new File([blob], `vibe-${Date.now()}.${media.format}`, {
       type: blob.type || fallbackType
     })
+
+    if (file.size > MAX_UPLOAD_SIZE) {
+      throw new Error('Vibes can be a maximum of 50 MB.')
+    }
+
+    return file
   }
 
   const getThumbnailFile = async () => {
@@ -292,6 +299,9 @@ const CreateVibe = ({ onPublished }) => {
         }
       }
 
+      const file = await getMediaFile()
+      const thumbnailFile = await getThumbnailFile()
+
       const permission = await Geolocation.checkPermissions()
 
       if (permission.location !== 'granted' && permission.coarseLocation !== 'granted') {
@@ -320,9 +330,6 @@ const CreateVibe = ({ onPublished }) => {
       } catch (error) {
         console.error('Failed to determine public Vibe location:', error)
       }
-
-      const file = await getMediaFile()
-      const thumbnailFile = await getThumbnailFile()
 
       await publishVibe({
         userId: user.id,
@@ -421,7 +428,7 @@ const CreateVibe = ({ onPublished }) => {
               </div>
 
               <span className="mt-4 font-bold text-vibe-text">Video</span>
-              <span className="mt-1 text-xs text-vibe-text/60">Up to 10 seconds</span>
+              <span className="mt-1 text-xs text-vibe-text/60">Up to 30 seconds</span>
             </button>
           </div>
 
