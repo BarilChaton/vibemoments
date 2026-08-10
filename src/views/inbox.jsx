@@ -36,7 +36,7 @@ const formatConversationTime = (createdAt) => {
 const Inbox = ({ initialConversationId = null }) => {
   const queryClient = useQueryClient()
 
-  const [activeTab, setActiveTab] = useState(initialConversationId ? 'chats' : 'requests')
+  const [activeTab, setActiveTab] = useState('chats')
   const [activeConversationId, setActiveConversationId] = useState(initialConversationId)
 
   // ---------------------------------------------------------------------------

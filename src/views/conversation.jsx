@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { App } from '@capacitor/app'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { FiArrowLeft, FiCheck, FiSend, FiUserPlus, FiUsers, FiX } from 'react-icons/fi'
@@ -18,6 +18,7 @@ import useAuthStore from '../stores/useAuthStore.js'
 import useChatStore from '../stores/useChatStore.js'
 
 const MAX_MESSAGE_LENGTH = 1000
+const LINK_REGEX = /((?:https?:\/\/|www\.)[^\s]+)/gi
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -28,6 +29,30 @@ const formatMessageTime = (createdAt) => {
     hour: '2-digit',
     minute: '2-digit'
   }).format(new Date(createdAt))
+}
+
+const renderMessageBody = (body) => {
+  const parts = body.split(LINK_REGEX)
+
+  return parts.map((part, index) => {
+    if (!part.match(LINK_REGEX)) {
+      return part
+    }
+
+    const href = part.toLowerCase().startsWith('www.') ? `https://${part}` : part
+
+    return (
+      <a
+        key={`${part}-${index}`}
+        className="break-all underline underline-offset-2"
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(event) => event.stopPropagation()}>
+        {part}
+      </a>
+    )
+  })
 }
 
 // -----------------------------------------------------------------------------
@@ -42,6 +67,9 @@ const Conversation = ({ conversationId, onBack }) => {
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+
+  const initialScrollDoneRef = useRef(false)
+  const previousMessageCountRef = useRef(0)
 
   const typingChannelRef = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -100,13 +128,20 @@ const Conversation = ({ conversationId, onBack }) => {
     queryKey: ['friendship-state', conversationId],
     queryFn: () => getFriendshipState(conversationId),
     enabled: Boolean(conversationId),
-
-    // Keep both phones synchronized while this conversation is open.
     staleTime: 0,
     refetchInterval: 2500,
     refetchIntervalInBackground: false,
     refetchOnMount: true
   })
+
+  // ---------------------------------------------------------------------------
+  // Reset scroll state
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    initialScrollDoneRef.current = false
+    previousMessageCountRef.current = 0
+  }, [conversationId])
 
   // ---------------------------------------------------------------------------
   // Active conversation
@@ -472,14 +507,37 @@ const Conversation = ({ conversationId, onBack }) => {
   }, [conversationId, user?.id])
 
   // ---------------------------------------------------------------------------
-  // Scroll to latest
+  // Initial scroll to latest
+  // ---------------------------------------------------------------------------
+
+  useLayoutEffect(() => {
+    if (messagesLoading || !messages.length || initialScrollDoneRef.current) return
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: 'instant',
+      block: 'end'
+    })
+
+    initialScrollDoneRef.current = true
+    previousMessageCountRef.current = messages.length
+  }, [messages, messagesLoading])
+
+  // ---------------------------------------------------------------------------
+  // New message scroll
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (!messages.length) return
+    if (!initialScrollDoneRef.current) return
+
+    const previousCount = previousMessageCountRef.current
+
+    previousMessageCountRef.current = messages.length
+
+    if (messages.length <= previousCount) return
 
     messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth'
+      behavior: 'smooth',
+      block: 'end'
     })
   }, [messages])
 
@@ -533,7 +591,7 @@ const Conversation = ({ conversationId, onBack }) => {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-vibe-bg">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-vibe-bg">
       {/* Header */}
       <header className="safe-top z-20 flex shrink-0 items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-5">
         <button
@@ -614,7 +672,7 @@ const Conversation = ({ conversationId, onBack }) => {
       )}
 
       {/* Messages */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-7">
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-5 pt-7">
         {messagesLoading && (
           <div className="flex justify-center py-10">
             <div className="size-3 animate-pulse rounded-full bg-vibe-lime" />
@@ -637,7 +695,7 @@ const Conversation = ({ conversationId, onBack }) => {
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           {messages.map((item, index) => {
             const mine = item.sender_id === user?.id
 
@@ -645,13 +703,13 @@ const Conversation = ({ conversationId, onBack }) => {
             const previousMine = previousMessage?.sender_id === item.sender_id
 
             return (
-              <div key={item.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} ${previousMine ? 'mt-0' : 'mt-3'}`}>
-                <div className={`flex max-w-[82%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
+              <div key={item.id} className={`flex min-w-0 ${mine ? 'justify-end' : 'justify-start'} ${previousMine ? 'mt-0' : 'mt-3'}`}>
+                <div className={`flex min-w-0 max-w-[82%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
                   <div
-                    className={`rounded-2xl px-4 py-2.5 ${
+                    className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-4 py-2.5 ${
                       mine ? 'rounded-br-md bg-vibe-petrol text-vibe-surface' : 'rounded-bl-md bg-vibe-surface text-vibe-text'
                     }`}>
-                    <p className="wrap-break-word whitespace-pre-wrap text-sm leading-5">{item.body}</p>
+                    <p className="min-w-0 whitespace-pre-wrap wrap-anywhere text-sm leading-5">{renderMessageBody(item.body)}</p>
                   </div>
 
                   <span className="mt-1 px-1 text-[10px] text-vibe-muted">{formatMessageTime(item.created_at)}</span>
@@ -688,10 +746,10 @@ const Conversation = ({ conversationId, onBack }) => {
 
       {/* Composer */}
       <div className="shrink-0 border-t border-vibe-petrol/10 bg-vibe-surface px-3 pb-8 pt-3">
-        <div className="flex items-end gap-2">
+        <div className="flex min-w-0 items-end gap-2">
           <textarea
             ref={inputRef}
-            className="max-h-32 min-h-11 flex-1 resize-none rounded-3xl border border-vibe-petrol/10 bg-vibe-bg px-4 py-3 text-sm leading-5 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-petrol/30"
+            className="max-h-32 min-h-11 min-w-0 flex-1 resize-none rounded-3xl border border-vibe-petrol/10 bg-vibe-bg px-4 py-3 text-sm leading-5 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-petrol/30"
             placeholder="Message..."
             value={message}
             maxLength={MAX_MESSAGE_LENGTH}
