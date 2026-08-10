@@ -16,6 +16,7 @@ export const getUserInterests = async (userId) => {
     .eq('user_id', userId)
 
   if (error) throw error
+
   return data.map((item) => item.interests)
 }
 
@@ -25,6 +26,7 @@ export const getRandomInterests = async (limit = 15) => {
   })
 
   if (error) throw error
+
   return data
 }
 
@@ -56,6 +58,29 @@ export const createInterest = async (userId, name) => {
     })
     .select()
     .single()
+
+  if (error) throw error
+
+  return data
+}
+
+export const setUserInterests = async ({ userId, interestIds }) => {
+  if (!userId) throw new Error('Not authenticated')
+
+  const uniqueInterestIds = [...new Set(interestIds)]
+
+  const { error: deleteError } = await supabase.from('user_interests').delete().eq('user_id', userId)
+
+  if (deleteError) throw deleteError
+
+  if (!uniqueInterestIds.length) return []
+
+  const rows = uniqueInterestIds.map((interestId) => ({
+    user_id: userId,
+    interest_id: interestId
+  }))
+
+  const { data, error } = await supabase.from('user_interests').insert(rows).select()
 
   if (error) throw error
 
