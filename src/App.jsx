@@ -99,7 +99,7 @@ const App = () => {
     <main className="flex h-dvh flex-col overflow-hidden bg-vibe-bg text-vibe-text">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {activeView === 'home' && <Home onOpenConversation={handleOpenConversation} />}
-        {activeView === 'friends' && <Friends />}
+        {activeView === 'friends' && <Friends onOpenConversation={handleOpenConversation} />}
         {activeView === 'create' && <CreateVibe onPublished={handleVibePublished} />}
 
         {activeView === 'inbox' && (

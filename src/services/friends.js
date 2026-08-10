@@ -29,7 +29,6 @@ export const sendFriendRequest = async (conversationId) => {
   })
 
   if (error) throw error
-
   return data
 }
 
@@ -44,6 +43,16 @@ export const respondToFriendRequest = async ({ requestId, accept }) => {
   })
 
   if (error) throw error
-
   return data
+}
+
+// -----------------------------------------------------------------------------
+// Friends
+// -----------------------------------------------------------------------------
+
+export const getFriends = async () => {
+  const { data, error } = await supabase.rpc('get_friends')
+
+  if (error) throw error
+  return data || []
 }
