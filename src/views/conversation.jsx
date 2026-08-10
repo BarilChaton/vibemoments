@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { App } from '@capacitor/app'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { FiArrowLeft, FiSend } from 'react-icons/fi'
+import { FiArrowLeft, FiCheck, FiSend, FiUserPlus, FiUsers, FiX } from 'react-icons/fi'
 import {
   getConversation,
   getConversationMessages,
@@ -13,6 +13,7 @@ import {
   unsubscribeFromConversationMessages,
   unsubscribeFromConversationTyping
 } from '../services/connections.js'
+import { getFriendshipState, respondToFriendRequest, sendFriendRequest } from '../services/friends.js'
 import useAuthStore from '../stores/useAuthStore.js'
 import useChatStore from '../stores/useChatStore.js'
 
@@ -52,6 +53,9 @@ const Conversation = ({ conversationId, onBack }) => {
   const [error, setError] = useState('')
   const [otherUserTyping, setOtherUserTyping] = useState(false)
 
+  const [friendActionLoading, setFriendActionLoading] = useState(false)
+  const [friendError, setFriendError] = useState('')
+
   // ---------------------------------------------------------------------------
   // Conversation
   // ---------------------------------------------------------------------------
@@ -80,6 +84,28 @@ const Conversation = ({ conversationId, onBack }) => {
     queryFn: () => getConversationMessages(conversationId),
     enabled: Boolean(conversationId),
     staleTime: Infinity
+  })
+
+  // ---------------------------------------------------------------------------
+  // Friendship state
+  // ---------------------------------------------------------------------------
+
+  const {
+    data: friendshipState = {
+      state: 'locked',
+      request_id: null
+    },
+    isLoading: friendshipLoading
+  } = useQuery({
+    queryKey: ['friendship-state', conversationId],
+    queryFn: () => getFriendshipState(conversationId),
+    enabled: Boolean(conversationId),
+
+    // Keep both phones synchronized while this conversation is open.
+    staleTime: 0,
+    refetchInterval: 2500,
+    refetchIntervalInBackground: false,
+    refetchOnMount: true
   })
 
   // ---------------------------------------------------------------------------
@@ -132,8 +158,6 @@ const Conversation = ({ conversationId, onBack }) => {
     if (!conversationId) return
 
     const refreshConversation = async () => {
-      if (!conversationId) return
-
       try {
         await queryClient.refetchQueries({
           queryKey: ['conversation-messages', conversationId],
@@ -150,6 +174,10 @@ const Conversation = ({ conversationId, onBack }) => {
 
           queryClient.invalidateQueries({
             queryKey: ['total-unread-messages']
+          }),
+
+          queryClient.invalidateQueries({
+            queryKey: ['friendship-state', conversationId]
           })
         ])
       } catch (error) {
@@ -158,18 +186,27 @@ const Conversation = ({ conversationId, onBack }) => {
     }
 
     let appStateListener
+    let disposed = false
 
     const setupAppStateListener = async () => {
-      appStateListener = await App.addListener('appStateChange', ({ isActive }) => {
+      const listener = await App.addListener('appStateChange', ({ isActive }) => {
         if (!isActive) return
 
         refreshConversation()
       })
+
+      if (disposed) {
+        listener.remove()
+        return
+      }
+
+      appStateListener = listener
     }
 
     setupAppStateListener()
 
     return () => {
+      disposed = true
       appStateListener?.remove()
     }
   }, [conversationId, queryClient])
@@ -220,6 +257,10 @@ const Conversation = ({ conversationId, onBack }) => {
 
         queryClient.invalidateQueries({
           queryKey: ['total-unread-messages']
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['friendship-state', conversationId]
         })
       ])
 
@@ -284,6 +325,63 @@ const Conversation = ({ conversationId, onBack }) => {
   }
 
   // ---------------------------------------------------------------------------
+  // Friend request
+  // ---------------------------------------------------------------------------
+
+  const handleSendFriendRequest = async () => {
+    if (!conversationId || friendActionLoading) return
+
+    setFriendActionLoading(true)
+    setFriendError('')
+
+    try {
+      await sendFriendRequest(conversationId)
+
+      await queryClient.invalidateQueries({
+        queryKey: ['friendship-state', conversationId]
+      })
+    } catch (error) {
+      console.error('Failed to send friend request:', error)
+      setFriendError(error.message || 'Could not send friend request.')
+    } finally {
+      setFriendActionLoading(false)
+    }
+  }
+
+  const handleRespondToFriendRequest = async (accept) => {
+    if (!friendshipState.request_id || friendActionLoading) return
+
+    setFriendActionLoading(true)
+    setFriendError('')
+
+    try {
+      await respondToFriendRequest({
+        requestId: friendshipState.request_id,
+        accept
+      })
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['friendship-state', conversationId]
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['friends']
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['profile-stats']
+        })
+      ])
+    } catch (error) {
+      console.error('Failed to respond to friend request:', error)
+      setFriendError(error.message || 'Could not update friend request.')
+    } finally {
+      setFriendActionLoading(false)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Realtime messages
   // ---------------------------------------------------------------------------
 
@@ -295,6 +393,10 @@ const Conversation = ({ conversationId, onBack }) => {
         if (current.some((item) => item.id === newMessage.id)) return current
 
         return [...current, newMessage]
+      })
+
+      await queryClient.invalidateQueries({
+        queryKey: ['friendship-state', conversationId]
       })
 
       if (newMessage.sender_id !== user?.id) {
@@ -445,15 +547,71 @@ const Conversation = ({ conversationId, onBack }) => {
           {otherUser?.display_name?.slice(0, 1)?.toUpperCase() || '?'}
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate font-bold text-vibe-petrol">{otherUser?.display_name || 'Conversation'}</p>
 
           <div className="mt-0.5 flex items-center gap-1.5">
             <div className="size-1.5 rounded-full bg-vibe-lime" />
-            <span className="text-xs text-vibe-muted">Connected through a Vibe</span>
+
+            <span className="text-xs text-vibe-muted">{friendshipState.state === 'friends' ? 'Friends' : 'Connected through a Vibe'}</span>
           </div>
         </div>
+
+        {!friendshipLoading && friendshipState.state === 'eligible' && (
+          <button
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-vibe-apricot px-3 py-2 text-xs font-bold text-vibe-text transition active:scale-95 disabled:opacity-50"
+            type="button"
+            disabled={friendActionLoading}
+            onClick={handleSendFriendRequest}>
+            <FiUserPlus />
+            {friendActionLoading ? 'Sending...' : 'Add friend'}
+          </button>
+        )}
+
+        {!friendshipLoading && friendshipState.state === 'outgoing_pending' && (
+          <div className="shrink-0 rounded-full bg-vibe-bg px-3 py-2 text-xs font-semibold text-vibe-muted">Request sent</div>
+        )}
+
+        {!friendshipLoading && friendshipState.state === 'friends' && (
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-vibe-lime/20 px-3 py-2 text-xs font-bold text-vibe-petrol">
+            <FiUsers />
+            Friends
+          </div>
+        )}
       </header>
+
+      {/* Incoming friend request */}
+      {friendshipState.state === 'incoming_pending' && (
+        <div className="shrink-0 border-b border-vibe-petrol/10 bg-vibe-apricot/15 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-vibe-petrol">Friend request</p>
+
+              <p className="mt-0.5 text-xs leading-5 text-vibe-muted">
+                {otherUser?.display_name || 'This person'} would like to add you as a friend.
+              </p>
+            </div>
+
+            <button
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-vibe-bg text-vibe-muted transition active:scale-95 disabled:opacity-50"
+              type="button"
+              title="Decline"
+              disabled={friendActionLoading}
+              onClick={() => handleRespondToFriendRequest(false)}>
+              <FiX />
+            </button>
+
+            <button
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-vibe-apricot text-vibe-text transition active:scale-95 disabled:opacity-50"
+              type="button"
+              title="Accept"
+              disabled={friendActionLoading}
+              onClick={() => handleRespondToFriendRequest(true)}>
+              <FiCheck />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-7">
@@ -522,7 +680,10 @@ const Conversation = ({ conversationId, onBack }) => {
         </div>
       </div>
 
-      {/* Error */}
+      {/* Friendship error */}
+      {friendError && <div className="shrink-0 px-4 py-2 text-center text-xs font-medium text-red-500">{friendError}</div>}
+
+      {/* Message error */}
       {error && <div className="shrink-0 px-4 py-2 text-center text-xs font-medium text-red-500">{error}</div>}
 
       {/* Composer */}
