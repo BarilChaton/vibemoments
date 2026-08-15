@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { Capacitor } from '@capacitor/core'
 import { Geolocation } from '@capacitor/geolocation'
+import { Camera, VibeCamera } from 'vibemoments-camera'
 import { FiCamera, FiMapPin, FiPlus, FiVideo, FiX } from 'react-icons/fi'
 import { reverseGeocode } from '../services/geocoding.js'
 import { publishVibe } from '../services/vibes.js'
@@ -106,10 +107,12 @@ const createVideoThumbnail = (videoUrl, seekTime = 0.5, maxWidth = 600, quality 
 // Component
 // -----------------------------------------------------------------------------
 
-const CreateVibe = ({ onPublished }) => {
+const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   const { user } = useAuthStore()
 
+  const [cameraOpen, setCameraOpen] = useState(false)
   const [media, setMedia] = useState(null)
+
   const [caption, setCaption] = useState('')
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState('')
@@ -121,81 +124,140 @@ const CreateVibe = ({ onPublished }) => {
   const [customInterest, setCustomInterest] = useState('')
   const [creatingInterest, setCreatingInterest] = useState(false)
 
-  // ---------------------------------------------------------------------------
-  // Capture
-  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    const root = document.getElementById('root')
 
-  const takePhoto = async () => {
-    setError('')
-
-    try {
-      const image = await Camera.getPhoto({
-        quality: 85,
-        allowEditing: false,
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Camera,
-        correctOrientation: true
-      })
-
-      if (!image.webPath) throw new Error('The camera did not return an image.')
-
-      setMedia({
-        type: 'photo',
-        webPath: image.webPath,
-        format: image.format || 'jpeg'
-      })
-    } catch (error) {
-      if (error?.message?.toLowerCase().includes('cancel')) return
-
-      console.error('Failed to take photo:', error)
-      setError('Could not take the photo. Please try again.')
+    if (cameraOpen) {
+      html.classList.add('vibe-camera-active')
+      body.classList.add('vibe-camera-active')
+      root?.classList.add('vibe-camera-active')
+    } else {
+      html.classList.remove('vibe-camera-active')
+      body.classList.remove('vibe-camera-active')
+      root?.classList.remove('vibe-camera-active')
     }
+
+    return () => {
+      html.classList.remove('vibe-camera-active')
+      body.classList.remove('vibe-camera-active')
+      root?.classList.remove('vibe-camera-active')
+    }
+  }, [cameraOpen])
+
+  useEffect(() => {
+    onCameraOpenChange?.(cameraOpen)
+
+    return () => {
+      onCameraOpenChange?.(false)
+    }
+  }, [cameraOpen, onCameraOpenChange])
+
+  // ---------------------------------------------------------------------------
+  // Camera
+  // ---------------------------------------------------------------------------
+
+  const openCamera = () => {
+    setError('')
+    setCameraOpen(true)
   }
 
-  const recordVideo = async () => {
+  const closeCamera = () => {
+    setCameraOpen(false)
+  }
+
+  const handleCameraError = (cameraError) => {
+    console.error('VibeCamera error:', cameraError)
+
+    setError(cameraError?.message || 'Could not use the camera. Please try again.')
+  }
+
+  const handleCameraCapture = async (capture) => {
     setError('')
 
     try {
-      const video = await Camera.recordVideo({
-        saveToGallery: false,
-        isPersistent: true,
-        includeMetadata: true,
-        duration: MAX_VIDEO_DURATION
-      })
-
-      console.log('Recorded video:', video)
-
-      if (!video.webPath) throw new Error('The camera did not return a usable video.')
-
-      const duration = video.metadata?.duration || (await getVideoDuration(video.webPath))
-      const format = video.metadata?.format || 'mp4'
-
-      if (duration > MAX_VIDEO_DURATION + VIDEO_DURATION_TOLERANCE) {
-        throw new Error(`Videos can be a maximum of ${MAX_VIDEO_DURATION} seconds.`)
+      if (!capture?.path) {
+        throw new Error('The camera did not return a usable media file.')
       }
 
-      const thumbnailFile = await createVideoThumbnail(video.webPath)
-      const thumbnailUrl = URL.createObjectURL(thumbnailFile)
+      const webPath = Capacitor.convertFileSrc(capture.path)
 
-      setMedia({
-        type: 'video',
-        webPath: video.webPath,
-        uri: video.uri,
-        format,
-        duration,
-        thumbnailFile,
-        thumbnailUrl
-      })
-    } catch (error) {
-      if (error?.message?.toLowerCase().includes('cancel')) return
+      if (capture.type === 'photo') {
+        setMedia({
+          type: 'photo',
+          path: capture.path,
+          webPath,
+          format: 'jpeg',
+          mimeType: capture.mimeType || 'image/jpeg',
+          lens: capture.lens
+        })
 
-      console.error('Failed to record video:', error)
-      setError(error?.message || 'Could not record the video. Please try again.')
+        setCameraOpen(false)
+        return
+      }
+
+      if (capture.type === 'video') {
+        let duration = capture.durationMs ? capture.durationMs / 1000 : 0
+
+        if (!duration) {
+          duration = await getVideoDuration(webPath)
+        }
+
+        if (duration > MAX_VIDEO_DURATION + VIDEO_DURATION_TOLERANCE) {
+          throw new Error(`Videos can be a maximum of ${MAX_VIDEO_DURATION} seconds.`)
+        }
+
+        const thumbnailFile = await createVideoThumbnail(webPath)
+        const thumbnailUrl = URL.createObjectURL(thumbnailFile)
+
+        setMedia({
+          type: 'video',
+          path: capture.path,
+          webPath,
+          format: 'mp4',
+          mimeType: capture.mimeType || 'video/mp4',
+          duration,
+          durationMs: capture.durationMs,
+          videoBitrate: capture.videoBitrate,
+          audioBitrate: capture.audioBitrate,
+          lens: capture.lens,
+          thumbnailFile,
+          thumbnailUrl
+        })
+
+        setCameraOpen(false)
+        return
+      }
+
+      throw new Error(`Unsupported camera media type: ${capture.type}`)
+    } catch (captureError) {
+      console.error('Failed to process camera capture:', captureError)
+
+      if (capture?.path) {
+        try {
+          await Camera.deleteCapture(capture.path)
+        } catch (cleanupError) {
+          console.error('Failed to clean up unusable capture:', cleanupError)
+        }
+      }
+
+      setError(captureError?.message || 'Could not process the captured media.')
     }
   }
 
-  const removeMedia = () => {
-    if (media?.thumbnailUrl) URL.revokeObjectURL(media.thumbnailUrl)
+  const removeMedia = async () => {
+    if (media?.thumbnailUrl) {
+      URL.revokeObjectURL(media.thumbnailUrl)
+    }
+
+    if (media?.path) {
+      try {
+        await Camera.deleteCapture(media.path)
+      } catch (cleanupError) {
+        console.error('Failed to delete temporary capture:', cleanupError)
+      }
+    }
 
     setMedia(null)
     setCaption('')
@@ -209,15 +271,24 @@ const CreateVibe = ({ onPublished }) => {
   // ---------------------------------------------------------------------------
 
   const getMediaFile = async () => {
+    if (!media?.webPath) {
+      throw new Error('Captured media is unavailable.')
+    }
+
     const response = await fetch(media.webPath)
 
-    if (!response.ok) throw new Error('Could not read the captured media.')
+    if (!response.ok) {
+      throw new Error('Could not read the captured media.')
+    }
 
     const blob = await response.blob()
+
     const fallbackType = media.type === 'video' ? 'video/mp4' : `image/${media.format}`
 
-    const file = new File([blob], `vibe-${Date.now()}.${media.format}`, {
-      type: blob.type || fallbackType
+    const extension = media.type === 'video' ? 'mp4' : media.format || 'jpeg'
+
+    const file = new File([blob], `vibe-${Date.now()}.${extension}`, {
+      type: blob.type || media.mimeType || fallbackType
     })
 
     if (file.size > MAX_UPLOAD_SIZE) {
@@ -228,9 +299,13 @@ const CreateVibe = ({ onPublished }) => {
   }
 
   const getThumbnailFile = async () => {
-    if (media.type === 'photo') return createImageThumbnail(media.webPath)
+    if (media.type === 'photo') {
+      return createImageThumbnail(media.webPath)
+    }
 
-    if (media.thumbnailFile) return media.thumbnailFile
+    if (media.thumbnailFile) {
+      return media.thumbnailFile
+    }
 
     return createVideoThumbnail(media.webPath)
   }
@@ -264,8 +339,8 @@ const CreateVibe = ({ onPublished }) => {
       })
 
       setCustomInterest('')
-    } catch (error) {
-      setError(error.message)
+    } catch (interestError) {
+      setError(interestError.message)
     } finally {
       setCreatingInterest(false)
     }
@@ -273,8 +348,13 @@ const CreateVibe = ({ onPublished }) => {
 
   const toggleInterest = (interestId) => {
     setSelectedInterests((current) => {
-      if (current.includes(interestId)) return current.filter((id) => id !== interestId)
-      if (current.length >= MAX_INTERESTS) return current
+      if (current.includes(interestId)) {
+        return current.filter((id) => id !== interestId)
+      }
+
+      if (current.length >= MAX_INTERESTS) {
+        return current
+      }
 
       return [...current, interestId]
     })
@@ -327,8 +407,8 @@ const CreateVibe = ({ onPublished }) => {
 
       try {
         publicLocation = await reverseGeocode(latitude, longitude)
-      } catch (error) {
-        console.error('Failed to determine public Vibe location:', error)
+      } catch (locationError) {
+        console.error('Failed to determine public Vibe location:', locationError)
       }
 
       await publishVibe({
@@ -344,17 +424,29 @@ const CreateVibe = ({ onPublished }) => {
         interestIds: selectedInterests
       })
 
-      if (media.thumbnailUrl) URL.revokeObjectURL(media.thumbnailUrl)
+      if (media.thumbnailUrl) {
+        URL.revokeObjectURL(media.thumbnailUrl)
+      }
+
+      if (media.path) {
+        try {
+          await Camera.deleteCapture(media.path)
+        } catch (cleanupError) {
+          console.error('Failed to delete uploaded temporary capture:', cleanupError)
+        }
+      }
 
       setMedia(null)
       setCaption('')
       setSelectedInterests([])
       setCustomInterest('')
+      setError('')
 
       onPublished?.()
-    } catch (error) {
-      console.error('Failed to publish Vibe:', error)
-      setError(error?.message || 'Could not publish your Vibe. Please try again.')
+    } catch (publishError) {
+      console.error('Failed to publish Vibe:', publishError)
+
+      setError(publishError?.message || 'Could not publish your Vibe. Please try again.')
     } finally {
       setPublishing(false)
     }
@@ -373,9 +465,10 @@ const CreateVibe = ({ onPublished }) => {
         const random = await getRandomInterests(15)
 
         setUserInterests(own)
+
         setOtherInterests(random.filter((interest) => !own.some((userInterest) => userInterest.id === interest.id)))
-      } catch (error) {
-        console.error('Failed to load interests:', error)
+      } catch (loadError) {
+        console.error('Failed to load interests:', loadError)
       }
     }
 
@@ -384,13 +477,33 @@ const CreateVibe = ({ onPublished }) => {
 
   // ---------------------------------------------------------------------------
   // Object URL cleanup
-  // ---------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
 
   useEffect(() => {
     return () => {
-      if (media?.thumbnailUrl) URL.revokeObjectURL(media.thumbnailUrl)
+      if (media?.thumbnailUrl) {
+        URL.revokeObjectURL(media.thumbnailUrl)
+      }
     }
   }, [media])
+
+  // ---------------------------------------------------------------------------
+  // Camera screen
+  // ---------------------------------------------------------------------------
+
+  if (!media && cameraOpen) {
+    return (
+      <div className="relative flex flex-1 overflow-hidden bg-transparent">
+        <VibeCamera autoStart onCapture={handleCameraCapture} onError={handleCameraError} onClose={closeCamera} />
+
+        {error && (
+          <div className="absolute left-4 right-4 top-20 z-30 rounded-2xl bg-red-500/90 px-4 py-3 text-center text-sm font-medium text-white backdrop-blur-md">
+            {error}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   // ---------------------------------------------------------------------------
   // Capture screen
@@ -401,39 +514,42 @@ const CreateVibe = ({ onPublished }) => {
       <div className="flex flex-1 flex-col">
         <header className="safe-top px-6 pb-4 pt-5">
           <p className="text-sm font-semibold text-vibe-apricot-dark">CAPTURE THE MOMENT</p>
+
           <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Create a Vibe</h1>
+
           <p className="mt-2 text-sm text-vibe-muted">Share what's happening around you right now.</p>
         </header>
 
         <div className="flex flex-1 flex-col justify-center px-6">
-          <div className="flex gap-4">
-            <button
-              className="flex flex-1 flex-col items-center justify-center rounded-3xl bg-vibe-surface px-4 py-8 transition active:scale-[0.98]"
-              type="button"
-              onClick={takePhoto}>
-              <div className="flex size-16 items-center justify-center rounded-full bg-vibe-petrol/10">
-                <FiCamera className="text-3xl text-vibe-petrol" />
-              </div>
+          <button
+            className="flex w-full flex-col items-center justify-center rounded-3xl bg-vibe-surface px-6 py-10 transition active:scale-[0.98]"
+            type="button"
+            onClick={openCamera}>
+            <div className="flex size-20 items-center justify-center rounded-full bg-vibe-petrol/10">
+              <FiCamera className="text-4xl text-vibe-petrol" />
+            </div>
 
-              <span className="mt-4 font-bold text-vibe-text">Photo</span>
-              <span className="mt-1 text-xs text-vibe-muted">Capture a moment</span>
-            </button>
+            <span className="mt-5 text-lg font-bold text-vibe-text">Open Camera</span>
 
-            <button
-              className="flex flex-1 flex-col items-center justify-center rounded-3xl bg-vibe-apricot px-4 py-8 transition active:scale-[0.98]"
-              type="button"
-              onClick={recordVideo}>
-              <div className="flex size-16 items-center justify-center rounded-full bg-white/25">
-                <FiVideo className="text-3xl text-vibe-text" />
-              </div>
+            <span className="mt-1 text-sm text-vibe-muted">Take a photo or record a video</span>
 
-              <span className="mt-4 font-bold text-vibe-text">Video</span>
-              <span className="mt-1 text-xs text-vibe-text/60">Up to 30 seconds</span>
-            </button>
-          </div>
+            <div className="mt-5 flex items-center gap-3 text-xs font-semibold text-vibe-muted">
+              <span className="flex items-center gap-1.5">
+                <FiCamera />
+                Photo
+              </span>
+
+              <span className="size-1 rounded-full bg-vibe-muted/40" />
+
+              <span className="flex items-center gap-1.5">
+                <FiVideo />
+                Up to 30 seconds
+              </span>
+            </div>
+          </button>
 
           <p className="mx-auto mt-6 max-w-xs text-center text-sm leading-6 text-vibe-muted">
-            Post a photo or a short video of what's happening around you.
+            Capture what's happening around you right now and share it with nearby people.
           </p>
 
           {error && <p className="mt-5 text-center text-sm font-medium text-red-500">{error}</p>}
@@ -451,6 +567,7 @@ const CreateVibe = ({ onPublished }) => {
       <header className="safe-top flex items-center justify-between px-6 pb-4 pt-5">
         <div>
           <p className="text-sm font-semibold text-vibe-apricot-dark">{media.type === 'video' ? 'NEW VIDEO VIBE' : 'NEW VIBE'}</p>
+
           <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Looking good?</h1>
         </div>
 
@@ -514,6 +631,7 @@ const CreateVibe = ({ onPublished }) => {
 
           <div>
             <p className="text-sm font-semibold text-vibe-text">General area only</p>
+
             <p className="mt-0.5 text-xs text-vibe-muted">Only the district and city are shown. Your exact location remains private.</p>
           </div>
         </div>
@@ -522,6 +640,7 @@ const CreateVibe = ({ onPublished }) => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-vibe-text">Add interests</h3>
+
               <p className="mt-1 text-xs text-vibe-muted">Choose existing interests or create one if it's missing.</p>
             </div>
 

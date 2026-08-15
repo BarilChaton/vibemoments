@@ -4,6 +4,8 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
+@source "../node_modules/vibemoments-camera/dist";
+
 @theme {
   --color-vibe-petrol: #174e5b;
   --color-vibe-petrol-light: #286b78;
@@ -100,4 +102,10 @@ video {
 .animate-vibe-reaction {
   animation: vibe-reaction 1.25s linear forwards;
   will-change: transform, opacity;
+}
+
+html.vibe-camera-active,
+body.vibe-camera-active,
+#root.vibe-camera-active {
+  background: transparent !important;
 }
