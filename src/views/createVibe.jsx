@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Geolocation } from '@capacitor/geolocation'
-import { Camera, VibeCamera } from 'vibemoments-camera'
+import { Camera, VibeCamera } from '@barilchaton/vibemoments-camera'
 import { FiCamera, FiMapPin, FiPlus, FiVideo, FiX } from 'react-icons/fi'
 import { reverseGeocode } from '../services/geocoding.js'
 import { publishVibe } from '../services/vibes.js'

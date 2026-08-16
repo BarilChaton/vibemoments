@@ -2,6 +2,9 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
 
+include ':barilchaton-vibemoments-camera'
+project(':barilchaton-vibemoments-camera').projectDir = new File('../node_modules/@barilchaton/vibemoments-camera/android')
+
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
 
@@ -28,6 +31,3 @@ project(':capacitor-splash-screen').projectDir = new File('../node_modules/@capa
 
 include ':capacitor-status-bar'
 project(':capacitor-status-bar').projectDir = new File('../node_modules/@capacitor/status-bar/android')
-
-include ':vibemoments-camera'
-project(':vibemoments-camera').projectDir = new File('../node_modules/vibemoments-camera/android')

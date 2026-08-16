@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@barilchaton/vibemoments-camera": "^0.1.6",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
@@ -32,7 +33,6 @@
     "react-dom": "^19.2.8",
     "react-icons": "^5.7.0",
     "tailwindcss": "^4.3.3",
-    "vibemoments-camera": "file:../vibemoments-camera/vibemoments-camera-0.1.6.tgz",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

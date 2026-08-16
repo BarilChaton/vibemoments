@@ -4,7 +4,7 @@
 @import 'tailwindcss/preflight.css' layer(base);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
-@source "../node_modules/vibemoments-camera/dist";
+@source "../node_modules/@barilchaton/vibemoments-camera/dist";
 
 @theme {
   --color-vibe-petrol: #174e5b;
