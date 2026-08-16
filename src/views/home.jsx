@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiMapPin, FiRefreshCw } from 'react-icons/fi'
 import { getNearbyVibes, getVibeMediaUrl } from '../services/vibes.js'
+import useFeedReactionActivity from '../hooks/useFeedReactionActivity.js'
 import VibeCard from '../components/vibes/VibeCard.jsx'
 import VibeViewer from '../components/vibes/VibeViewer.jsx'
 
@@ -45,6 +46,8 @@ const Home = ({ onOpenConversation }) => {
   })
 
   const [selectedVibeIndex, setSelectedVibeIndex] = useState(null)
+
+  const reactionActivity = useFeedReactionActivity(vibes)
 
   return (
     <div className="flex flex-1 flex-col">
@@ -109,7 +112,7 @@ const Home = ({ onOpenConversation }) => {
       ) : (
         <div className="grid grid-cols-2 gap-3 px-3 pb-8 pt-2">
           {vibes.map((vibe, index) => (
-            <VibeCard key={vibe.id} vibe={vibe} onClick={() => setSelectedVibeIndex(index)} />
+            <VibeCard key={vibe.id} vibe={vibe} reactionActivity={reactionActivity[vibe.id]} onClick={() => setSelectedVibeIndex(index)} />
           ))}
         </div>
       )}

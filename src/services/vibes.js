@@ -97,6 +97,7 @@ export const createVibe = async ({
     .single()
 
   if (error) throw error
+
   return data
 }
 
@@ -113,6 +114,7 @@ export const addVibeInterests = async (vibeId, interestIds = []) => {
   const { data, error } = await supabase.from('vibe_interests').insert(rows).select()
 
   if (error) throw error
+
   return data
 }
 
@@ -141,6 +143,10 @@ export const getVibeInterests = async (vibeId) => {
   return data.map((item) => item.interests).filter(Boolean)
 }
 
+// -----------------------------------------------------------------------------
+// Vibe reactions
+// -----------------------------------------------------------------------------
+
 export const sendVibeReaction = async ({ vibeId, userId, emoji }) => {
   const { data, error } = await supabase
     .from('vibe_reactions')
@@ -156,6 +162,10 @@ export const sendVibeReaction = async ({ vibeId, userId, emoji }) => {
 
   return data
 }
+
+// -----------------------------------------------------------------------------
+// Single Vibe reaction realtime
+// -----------------------------------------------------------------------------
 
 export const subscribeToVibeReactions = (vibeId, onReaction) => {
   const channel = supabase
@@ -178,6 +188,42 @@ export const subscribeToVibeReactions = (vibeId, onReaction) => {
 }
 
 export const unsubscribeFromVibeReactions = async (channel) => {
+  if (!channel) return
+
+  await supabase.removeChannel(channel)
+}
+
+// -----------------------------------------------------------------------------
+// Feed reaction realtime
+// -----------------------------------------------------------------------------
+
+export const subscribeToFeedVibeReactions = (vibeIds, onReaction) => {
+  const ids = [...new Set((vibeIds || []).filter(Boolean))].slice(0, 100)
+
+  if (!ids.length) return null
+
+  const channel = supabase
+    .channel(`feed-vibe-reactions:${crypto.randomUUID()}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'vibe_reactions',
+        filter: `vibe_id=in.(${ids.join(',')})`
+      },
+      (payload) => {
+        onReaction(payload.new)
+      }
+    )
+    .subscribe((status) => {
+      console.log('Feed reaction realtime status:', status)
+    })
+
+  return channel
+}
+
+export const unsubscribeFromFeedVibeReactions = async (channel) => {
   if (!channel) return
 
   await supabase.removeChannel(channel)
