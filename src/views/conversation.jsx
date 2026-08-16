@@ -7,6 +7,7 @@ import {
   getConversationMessages,
   markConversationAsRead,
   sendConversationTyping,
+  sendGifMessage,
   sendMessage,
   subscribeToConversationMessages,
   subscribeToConversationTyping,
@@ -30,6 +31,8 @@ const Conversation = ({ conversationId, onBack }) => {
   const queryClient = useQueryClient()
 
   const messagesEndRef = useRef(null)
+  const messagesScrollRef = useRef(null)
+  const messagesContentRef = useRef(null)
   const inputRef = useRef(null)
 
   const initialScrollDoneRef = useRef(false)
@@ -97,15 +100,6 @@ const Conversation = ({ conversationId, onBack }) => {
     refetchIntervalInBackground: false,
     refetchOnMount: true
   })
-
-  // ---------------------------------------------------------------------------
-  // Scroll reset
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    initialScrollDoneRef.current = false
-    previousMessageCountRef.current = 0
-  }, [conversationId])
 
   // ---------------------------------------------------------------------------
   // Active conversation
@@ -279,6 +273,49 @@ const Conversation = ({ conversationId, onBack }) => {
 
     event.preventDefault()
     handleSend()
+  }
+
+  // ---------------------------------------------------------------------------
+  // Send GIF
+  // ---------------------------------------------------------------------------
+
+  const handleSendGif = async (gif) => {
+    if (!conversationId || !user || sending) return
+
+    setSending(true)
+    setError('')
+
+    try {
+      const newMessage = await sendGifMessage({
+        conversationId,
+        gif
+      })
+
+      queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => {
+        if (current.some((item) => item.id === newMessage.id)) return current
+
+        return [...current, newMessage]
+      })
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['conversations']
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['total-unread-messages']
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['friendship-state', conversationId]
+        })
+      ])
+    } catch (gifError) {
+      console.error('Failed to send GIF:', gifError)
+      setError(gifError.message || 'Could not send the GIF.')
+    } finally {
+      setSending(false)
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -471,20 +508,86 @@ const Conversation = ({ conversationId, onBack }) => {
   }, [conversationId, user?.id])
 
   // ---------------------------------------------------------------------------
-  // Initial scroll
+  // Reset message scroll
   // ---------------------------------------------------------------------------
 
   useLayoutEffect(() => {
-    if (messagesLoading || !messages.length || initialScrollDoneRef.current) return
+    initialScrollDoneRef.current = false
+    previousMessageCountRef.current = 0
+  }, [conversationId])
 
-    messagesEndRef.current?.scrollIntoView({
-      behavior: 'instant',
-      block: 'end'
+  // ---------------------------------------------------------------------------
+  // Initial scroll to latest
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (conversationLoading || messagesLoading || !messages.length || initialScrollDoneRef.current) return
+
+    const container = messagesScrollRef.current
+    const content = messagesContentRef.current
+
+    if (!container || !content) return
+
+    let disposed = false
+    let settleTimer = null
+
+    const scrollToBottom = () => {
+      if (disposed) return
+
+      container.scrollTop = container.scrollHeight
+    }
+
+    const scheduleSettled = () => {
+      clearTimeout(settleTimer)
+
+      settleTimer = setTimeout(() => {
+        if (disposed) return
+
+        scrollToBottom()
+
+        initialScrollDoneRef.current = true
+        previousMessageCountRef.current = messages.length
+      }, 400)
+    }
+
+    scrollToBottom()
+
+    requestAnimationFrame(() => {
+      scrollToBottom()
+
+      requestAnimationFrame(() => {
+        scrollToBottom()
+      })
     })
 
-    initialScrollDoneRef.current = true
-    previousMessageCountRef.current = messages.length
-  }, [messages, messagesLoading])
+    const observer = new ResizeObserver(() => {
+      scrollToBottom()
+      scheduleSettled()
+    })
+
+    observer.observe(content)
+
+    const timers = [
+      setTimeout(scrollToBottom, 50),
+      setTimeout(scrollToBottom, 150),
+      setTimeout(scrollToBottom, 300),
+      setTimeout(scrollToBottom, 600),
+      setTimeout(scrollToBottom, 1000)
+    ]
+
+    scheduleSettled()
+
+    return () => {
+      disposed = true
+
+      observer.disconnect()
+      clearTimeout(settleTimer)
+
+      timers.forEach((timer) => {
+        clearTimeout(timer)
+      })
+    }
+  }, [conversationId, conversationLoading, messages, messagesLoading])
 
   // ---------------------------------------------------------------------------
   // New-message scroll
@@ -499,11 +602,37 @@ const Conversation = ({ conversationId, onBack }) => {
 
     if (messages.length <= previousCount) return
 
-    messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end'
+    const container = messagesScrollRef.current
+
+    if (!container) return
+
+    requestAnimationFrame(() => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      })
     })
   }, [messages])
+
+  // ---------------------------------------------------------------------------
+  // Media layout correction
+  // ---------------------------------------------------------------------------
+
+  const handleMessageMediaLoad = () => {
+    if (!initialScrollDoneRef.current) return
+
+    const container = messagesScrollRef.current
+
+    if (!container) return
+
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+
+    if (distanceFromBottom > 150) return
+
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight
+    })
+  }
 
   // ---------------------------------------------------------------------------
   // Loading
@@ -574,7 +703,10 @@ const Conversation = ({ conversationId, onBack }) => {
         messagesLoading={messagesLoading}
         messagesError={messagesError}
         userId={user?.id}
+        scrollContainerRef={messagesScrollRef}
+        messagesContentRef={messagesContentRef}
         messagesEndRef={messagesEndRef}
+        onMediaLoad={handleMessageMediaLoad}
       />
 
       <TypingIndicator visible={otherUserTyping} displayName={otherUser?.display_name} />
@@ -591,6 +723,7 @@ const Conversation = ({ conversationId, onBack }) => {
         onChange={handleTyping}
         onKeyDown={handleKeyDown}
         onSend={handleSend}
+        onGifSelect={handleSendGif}
       />
     </div>
   )

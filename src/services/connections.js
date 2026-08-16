@@ -179,7 +179,20 @@ export const getConversation = async (conversationId) => {
 export const getConversationMessages = async (conversationId) => {
   const { data, error } = await supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, body, created_at')
+    .select(
+      `
+      id,
+      conversation_id,
+      sender_id,
+      body,
+      created_at,
+      message_type,
+      media_url,
+      media_preview_url,
+      media_provider,
+      media_id
+    `
+    )
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true })
 
@@ -209,6 +222,31 @@ export const sendMessage = async ({ conversationId, message }) => {
   return data
 }
 
+const getMessageById = async (messageId) => {
+  const { data, error } = await supabase
+    .from('messages')
+    .select(
+      `
+      id,
+      conversation_id,
+      sender_id,
+      body,
+      created_at,
+      message_type,
+      media_url,
+      media_preview_url,
+      media_provider,
+      media_id
+    `
+    )
+    .eq('id', messageId)
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
 // -----------------------------------------------------------------------------
 // Conversation realtime
 // -----------------------------------------------------------------------------
@@ -224,9 +262,23 @@ export const subscribeToConversationMessages = (conversationId, onMessage) => {
         table: 'messages',
         filter: `conversation_id=eq.${conversationId}`
       },
-      (payload) => {
-        console.log('Realtime message received:', payload.new)
-        onMessage(payload.new)
+      async (payload) => {
+        try {
+          let message = payload.new
+
+          const needsHydration =
+            !message.message_type || (message.message_type === 'gif' && !message.media_url) || (message.body === null && !message.media_url)
+
+          if (needsHydration) {
+            message = await getMessageById(message.id)
+          }
+
+          onMessage(message)
+        } catch (error) {
+          console.error('Failed to hydrate realtime message:', error)
+
+          onMessage(payload.new)
+        }
       }
     )
     .subscribe((status) => {
@@ -339,4 +391,41 @@ export const unsubscribeFromConversationTyping = async (channel) => {
   if (!channel) return
 
   await supabase.removeChannel(channel)
+}
+
+export const sendGifMessage = async ({ conversationId, gif }) => {
+  if (!conversationId) {
+    throw new Error('Conversation is required.')
+  }
+
+  if (!gif?.url || !gif?.id) {
+    throw new Error('A valid GIF is required.')
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser()
+
+  if (userError) throw userError
+  if (!user) throw new Error('You must be signed in to send a GIF.')
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      body: null,
+      message_type: 'gif',
+      media_url: gif.url,
+      media_preview_url: gif.previewUrl || gif.url,
+      media_provider: gif.provider || 'klipy',
+      media_id: String(gif.id)
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
 }
