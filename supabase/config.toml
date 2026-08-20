@@ -20,3 +20,36 @@ entrypoint = "./functions/send-message-push/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-message-push/*.html" ]
+
+[functions.create-capture-session]
+enabled = true
+verify_jwt = false
+import_map = "./functions/create-capture-session/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/create-capture-session/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/create-capture-session/*.html" ]
+
+[functions.register-capture-device]
+enabled = true
+verify_jwt = false
+import_map = "./functions/register-capture-device/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/register-capture-device/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/register-capture-device/*.html" ]
+
+[functions.verify-capture-proof]
+enabled = true
+verify_jwt = false
+import_map = "./functions/verify-capture-proof/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/verify-capture-proof/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/verify-capture-proof/*.html" ]

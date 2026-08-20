@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { verifyCaptureProof } from './captureSecurity.js'
 
 // -----------------------------------------------------------------------------
 // Constants
@@ -260,12 +261,34 @@ export const publishVibe = async ({
   longitude,
   locationArea = null,
   locationCity = null,
-  interestIds = []
+  interestIds = [],
+
+  captureSessionId,
+  captureNonce,
+  mediaSha256,
+  captureDeviceId,
+  captureSignature,
+  captureProofVersion,
+  captureSignatureAlgorithm
 }) => {
-  if (!file) throw new Error('No media file provided.')
+  if (!file) {
+    throw new Error('No media file provided.')
+  }
 
   if (file.size > MAX_UPLOAD_SIZE) {
     throw new Error('Vibe media can be a maximum of 50 MB.')
+  }
+
+  if (
+    !captureSessionId ||
+    !captureNonce ||
+    !mediaSha256 ||
+    !captureDeviceId ||
+    !captureSignature ||
+    !captureProofVersion ||
+    !captureSignatureAlgorithm
+  ) {
+    throw new Error('Missing secure capture proof.')
   }
 
   const vibeId = crypto.randomUUID()
@@ -275,13 +298,45 @@ export const publishVibe = async ({
   let vibeCreated = false
 
   try {
+    // -------------------------------------------------------------------------
+    // Upload original captured media
+    // -------------------------------------------------------------------------
+
     mediaPath = await uploadVibeMedia({
       userId,
       vibeId,
       file,
       mediaType,
-      filename: `original.${getFileExtension(file, 'jpg')}`
+      filename: `original.${getFileExtension(file, mediaType === 'video' ? 'mp4' : 'jpg')}`
     })
+
+    // -------------------------------------------------------------------------
+    // Server-side capture proof verification
+    // -------------------------------------------------------------------------
+
+    console.log('[VibeMoments] Verifying capture proof...')
+
+    const verification = await verifyCaptureProof({
+      captureSessionId,
+      nonce: captureNonce,
+      mediaType,
+      mediaSha256,
+      deviceId: captureDeviceId,
+      captureSignature,
+      proofVersion: captureProofVersion,
+      signatureAlgorithm: captureSignatureAlgorithm,
+      storagePath: mediaPath
+    })
+
+    console.log('[VibeMoments] Capture proof verified:', verification)
+
+    if (!verification?.valid) {
+      throw new Error('Capture proof verification failed.')
+    }
+
+    // -------------------------------------------------------------------------
+    // Upload thumbnail
+    // -------------------------------------------------------------------------
 
     if (thumbnailFile) {
       thumbnailPath = await uploadVibeMedia({
@@ -292,6 +347,10 @@ export const publishVibe = async ({
         filename: 'thumbnail.webp'
       })
     }
+
+    // -------------------------------------------------------------------------
+    // Create Vibe
+    // -------------------------------------------------------------------------
 
     const vibe = await createVibe({
       userId,
@@ -308,10 +367,18 @@ export const publishVibe = async ({
 
     vibeCreated = true
 
+    // -------------------------------------------------------------------------
+    // Interests
+    // -------------------------------------------------------------------------
+
     await addVibeInterests(vibeId, interestIds)
 
     return vibe
   } catch (error) {
+    // -------------------------------------------------------------------------
+    // Rollback Vibe row
+    // -------------------------------------------------------------------------
+
     if (vibeCreated) {
       try {
         await deleteVibe(vibeId)
@@ -319,6 +386,10 @@ export const publishVibe = async ({
         console.error('Failed to clean up Vibe row:', cleanupError)
       }
     }
+
+    // -------------------------------------------------------------------------
+    // Rollback uploaded media
+    // -------------------------------------------------------------------------
 
     try {
       await deleteVibeMedia([mediaPath, thumbnailPath])

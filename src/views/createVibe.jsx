@@ -1,3 +1,5 @@
+import { registerCaptureDevice } from '../services/captureSecurity.js'
+import { supabase } from '../services/supabase.js'
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Geolocation } from '@capacitor/geolocation'
@@ -24,6 +26,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   const { user } = useAuthStore()
 
   const [cameraOpen, setCameraOpen] = useState(false)
+  const [captureSession, setCaptureSession] = useState(null)
+  const [captureMode, setCaptureMode] = useState('photo')
+  const [openingCamera, setOpeningCamera] = useState(false)
   const [media, setMedia] = useState(null)
 
   const [caption, setCaption] = useState('')
@@ -68,16 +73,69 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   }, [cameraOpen, onCameraOpenChange])
 
   // ---------------------------------------------------------------------------
+  // Capture session
+  // ---------------------------------------------------------------------------
+
+  const createCaptureSession = async (mediaType, deviceId) => {
+    const { data, error } = await supabase.functions.invoke('create-capture-session', {
+      body: {
+        mediaType,
+        deviceId
+      }
+    })
+
+    if (error) {
+      throw error
+    }
+
+    if (!data?.captureSessionId || !data?.nonce) {
+      throw new Error('Capture session was not created correctly.')
+    }
+
+    return data
+  }
+
+  // ---------------------------------------------------------------------------
   // Camera
   // ---------------------------------------------------------------------------
 
-  const openCamera = () => {
+  const openCamera = async () => {
+    const mediaType = 'photo'
+
+    if (openingCamera) return
+
+    setOpeningCamera(true)
     setError('')
-    setCameraOpen(true)
+
+    try {
+      console.log('[VibeMoments] Ensuring capture device is registered...')
+
+      const { identity } = await registerCaptureDevice()
+
+      console.log('[VibeMoments] Capture device ready:', identity.deviceId)
+
+      console.log('[VibeMoments] Creating capture session:', mediaType)
+
+      const session = await createCaptureSession(mediaType, identity.deviceId)
+
+      console.log('[VibeMoments] Capture session created:', JSON.stringify(session, null, 2))
+
+      setCaptureSession(session)
+      setCaptureMode(mediaType)
+      setCameraOpen(true)
+    } catch (captureError) {
+      console.error('Failed to prepare secure camera:', captureError)
+
+      setCaptureSession(null)
+      setError(captureError?.message || 'Could not prepare the camera. Please try again.')
+    } finally {
+      setOpeningCamera(false)
+    }
   }
 
   const closeCamera = () => {
     setCameraOpen(false)
+    setCaptureSession(null)
   }
 
   const handleCameraError = (cameraError) => {
@@ -90,8 +148,46 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     setError('')
 
     try {
+      console.log('[VibeMoments] Camera capture received:', capture)
+
       if (!capture?.path) {
         throw new Error('The camera did not return a usable media file.')
+      }
+
+      if (!capture?.sha256) {
+        throw new Error('The camera did not return a capture fingerprint.')
+      }
+
+      if (!capture?.captureSessionId) {
+        throw new Error('The camera did not return a capture session ID.')
+      }
+
+      if (!capture?.nonce) {
+        throw new Error('The camera did not return a capture nonce.')
+      }
+
+      if (capture.captureSessionId !== captureSession?.captureSessionId) {
+        throw new Error('Capture session does not match the active camera session.')
+      }
+
+      if (capture.nonce !== captureSession?.nonce) {
+        throw new Error('Capture nonce does not match the active camera session.')
+      }
+
+      if (!capture?.deviceId) {
+        throw new Error('The camera did not return a capture device ID.')
+      }
+
+      if (!capture?.captureSignature) {
+        throw new Error('The camera did not return a capture signature.')
+      }
+
+      if (!capture?.proofVersion) {
+        throw new Error('The camera did not return a capture proof version.')
+      }
+
+      if (!capture?.signatureAlgorithm) {
+        throw new Error('The camera did not return a signature algorithm.')
       }
 
       const webPath = Capacitor.convertFileSrc(capture.path)
@@ -103,14 +199,37 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
           webPath,
           format: 'jpeg',
           mimeType: capture.mimeType || 'image/jpeg',
-          lens: capture.lens
+          lens: capture.lens,
+
+          sha256: capture.sha256,
+          captureSessionId: capture.captureSessionId,
+          nonce: capture.nonce,
+
+          deviceId: capture.deviceId,
+          captureSignature: capture.captureSignature,
+          proofVersion: capture.proofVersion,
+          signatureAlgorithm: capture.signatureAlgorithm
         })
 
         setCameraOpen(false)
+        setCaptureSession(null)
+
         return
       }
 
       if (capture.type === 'video') {
+        if (!capture.captureSessionId) {
+          throw new Error('The camera did not return a capture session ID.')
+        }
+
+        if (!capture.nonce) {
+          throw new Error('The camera did not return a capture nonce.')
+        }
+
+        if (!capture.sha256) {
+          throw new Error('The camera did not return a video SHA-256.')
+        }
+
         let duration = capture.durationMs ? capture.durationMs / 1000 : 0
 
         if (!duration) {
@@ -135,6 +254,16 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
           videoBitrate: capture.videoBitrate,
           audioBitrate: capture.audioBitrate,
           lens: capture.lens,
+
+          sha256: capture.sha256,
+          captureSessionId: capture.captureSessionId,
+          nonce: capture.nonce,
+
+          deviceId: capture.deviceId,
+          captureSignature: capture.captureSignature,
+          proofVersion: capture.proofVersion,
+          signatureAlgorithm: capture.signatureAlgorithm,
+
           thumbnailFile,
           thumbnailUrl
         })
@@ -155,6 +284,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         }
       }
 
+      setCaptureSession(null)
       setError(captureError?.message || 'Could not process the captured media.')
     }
   }
@@ -177,6 +307,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     }
 
     setMedia(null)
+    setCaptureSession(null)
     setCaption('')
     setSelectedInterests([])
     setCustomInterest('')
@@ -244,6 +375,18 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     setError('')
 
     try {
+      if (
+        !media.captureSessionId ||
+        !media.nonce ||
+        !media.sha256 ||
+        !media.deviceId ||
+        !media.captureSignature ||
+        !media.proofVersion ||
+        !media.signatureAlgorithm
+      ) {
+        throw new Error('This capture does not contain valid capture verification data.')
+      }
+
       if (media.type === 'video') {
         const duration = media.duration || (await getVideoDuration(media.webPath))
 
@@ -294,7 +437,16 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         longitude,
         locationArea: publicLocation.area,
         locationCity: publicLocation.city,
-        interestIds: selectedInterests
+        interestIds: selectedInterests,
+
+        captureSessionId: media.captureSessionId,
+        captureNonce: media.nonce,
+        mediaSha256: media.sha256,
+
+        captureDeviceId: media.deviceId,
+        captureSignature: media.captureSignature,
+        captureProofVersion: media.proofVersion,
+        captureSignatureAlgorithm: media.signatureAlgorithm
       })
 
       if (media.thumbnailUrl) {
@@ -310,6 +462,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       }
 
       setMedia(null)
+      setCaptureSession(null)
       setCaption('')
       setSelectedInterests([])
       setCustomInterest('')
@@ -365,7 +518,16 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   // ---------------------------------------------------------------------------
 
   if (!media && cameraOpen) {
-    return <VibeCameraScreen error={error} onCapture={handleCameraCapture} onError={handleCameraError} onClose={closeCamera} />
+    return (
+      <VibeCameraScreen
+        error={error}
+        captureSession={captureSession}
+        initialMode={captureMode}
+        onCapture={handleCameraCapture}
+        onError={handleCameraError}
+        onClose={closeCamera}
+      />
+    )
   }
 
   // ---------------------------------------------------------------------------
@@ -373,7 +535,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   // ---------------------------------------------------------------------------
 
   if (!media) {
-    return <VibeCaptureScreen error={error} onOpenCamera={openCamera} />
+    return <VibeCaptureScreen error={error} openingCamera={openingCamera} onOpenCamera={openCamera} />
   }
 
   // ---------------------------------------------------------------------------
