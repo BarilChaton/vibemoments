@@ -27,6 +27,8 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
   const [cameraOpen, setCameraOpen] = useState(false)
   const [captureSession, setCaptureSession] = useState(null)
+  const [captureDeviceId, setCaptureDeviceId] = useState(null)
+  const [captureSessionUpdating, setCaptureSessionUpdating] = useState(false)
   const [captureMode, setCaptureMode] = useState('photo')
   const [openingCamera, setOpeningCamera] = useState(false)
   const [media, setMedia] = useState(null)
@@ -95,6 +97,39 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     return data
   }
 
+  const handleCaptureModeChange = async (nextMode) => {
+    if (!captureDeviceId || captureSessionUpdating) return
+    if (nextMode !== 'photo' && nextMode !== 'video') return
+    if (nextMode === captureMode && captureSession) return
+
+    setCaptureSessionUpdating(true)
+    setError('')
+
+    try {
+      console.log('[VibeMoments] Changing secure capture mode:', nextMode)
+
+      /*
+       * Do not allow the old session to remain usable while a session
+       * for the newly selected media type is being created.
+       */
+      setCaptureSession(null)
+
+      const session = await createCaptureSession(nextMode, captureDeviceId)
+
+      console.log('[VibeMoments] New capture session created:', JSON.stringify(session, null, 2))
+
+      setCaptureSession(session)
+      setCaptureMode(nextMode)
+    } catch (sessionError) {
+      console.error('Failed to change secure capture mode:', sessionError)
+
+      setCaptureSession(null)
+      setError(sessionError?.message || 'Could not prepare the selected capture mode.')
+    } finally {
+      setCaptureSessionUpdating(false)
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Camera
   // ---------------------------------------------------------------------------
@@ -114,6 +149,8 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
       console.log('[VibeMoments] Capture device ready:', identity.deviceId)
 
+      setCaptureDeviceId(identity.deviceId)
+
       console.log('[VibeMoments] Creating capture session:', mediaType)
 
       const session = await createCaptureSession(mediaType, identity.deviceId)
@@ -127,6 +164,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       console.error('Failed to prepare secure camera:', captureError)
 
       setCaptureSession(null)
+      setCaptureDeviceId(null)
       setError(captureError?.message || 'Could not prepare the camera. Please try again.')
     } finally {
       setOpeningCamera(false)
@@ -136,6 +174,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   const closeCamera = () => {
     setCameraOpen(false)
     setCaptureSession(null)
+    setCaptureDeviceId(null)
+    setCaptureSessionUpdating(false)
+    setCaptureMode('photo')
   }
 
   const handleCameraError = (cameraError) => {
@@ -190,6 +231,10 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         throw new Error('The camera did not return a signature algorithm.')
       }
 
+      if (capture.type !== captureMode) {
+        throw new Error(`Captured media type "${capture.type}" does not match secure capture mode "${captureMode}".`)
+      }
+
       const webPath = Capacitor.convertFileSrc(capture.path)
 
       if (capture.type === 'photo') {
@@ -213,23 +258,13 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
         setCameraOpen(false)
         setCaptureSession(null)
+        setCaptureDeviceId(null)
+        setCaptureSessionUpdating(false)
 
         return
       }
 
       if (capture.type === 'video') {
-        if (!capture.captureSessionId) {
-          throw new Error('The camera did not return a capture session ID.')
-        }
-
-        if (!capture.nonce) {
-          throw new Error('The camera did not return a capture nonce.')
-        }
-
-        if (!capture.sha256) {
-          throw new Error('The camera did not return a video SHA-256.')
-        }
-
         let duration = capture.durationMs ? capture.durationMs / 1000 : 0
 
         if (!duration) {
@@ -269,6 +304,10 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         })
 
         setCameraOpen(false)
+        setCaptureSession(null)
+        setCaptureDeviceId(null)
+        setCaptureSessionUpdating(false)
+
         return
       }
 
@@ -285,6 +324,8 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       }
 
       setCaptureSession(null)
+      setCaptureDeviceId(null)
+      setCaptureSessionUpdating(false)
       setError(captureError?.message || 'Could not process the captured media.')
     }
   }
@@ -308,6 +349,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
     setMedia(null)
     setCaptureSession(null)
+    setCaptureDeviceId(null)
+    setCaptureSessionUpdating(false)
+    setCaptureMode('photo')
     setCaption('')
     setSelectedInterests([])
     setCustomInterest('')
@@ -395,6 +439,17 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         }
       }
 
+      console.log('[VibeMoments] Publishing secure capture:', {
+        type: media.type,
+        mimeType: media.mimeType,
+        captureSessionId: media.captureSessionId,
+        deviceId: media.deviceId,
+        sha256: media.sha256,
+        proofVersion: media.proofVersion,
+        signatureAlgorithm: media.signatureAlgorithm,
+        hasSignature: Boolean(media.captureSignature)
+      })
+
       const file = await createMediaFile(media)
       const thumbnailFile = await createMediaThumbnail(media)
 
@@ -463,6 +518,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
       setMedia(null)
       setCaptureSession(null)
+      setCaptureDeviceId(null)
+      setCaptureSessionUpdating(false)
+      setCaptureMode('photo')
       setCaption('')
       setSelectedInterests([])
       setCustomInterest('')
@@ -522,7 +580,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       <VibeCameraScreen
         error={error}
         captureSession={captureSession}
+        captureSessionUpdating={captureSessionUpdating}
         initialMode={captureMode}
+        onModeChange={handleCaptureModeChange}
         onCapture={handleCameraCapture}
         onError={handleCameraError}
         onClose={closeCamera}
