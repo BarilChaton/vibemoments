@@ -54,6 +54,34 @@ export const updateProfile = async ({ userId, displayName, username, bio }) => {
   return data
 }
 
+export const updateVibeRadius = async ({ userId, radiusMeters }) => {
+  if (!userId) throw new Error('Not authenticated')
+
+  const radius = Number(radiusMeters)
+
+  if (!Number.isFinite(radius)) {
+    throw new Error('Invalid Vibe distance.')
+  }
+
+  if (radius < 5000 || radius > 25000) {
+    throw new Error('Vibe distance must be between 5 km and 25 km.')
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      vibe_radius_meters: Math.round(radius),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', userId)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
 export const getProfileStats = async (userId) => {
   if (!userId) {
     return {

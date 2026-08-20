@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { FiCheck, FiEdit3, FiLogOut, FiPlus, FiUser, FiX } from 'react-icons/fi'
 import { signOut } from '../services/auth.js'
-import { getProfileStats, updateProfile } from '../services/profile.js'
+import { getProfileStats, updateProfile, updateVibeRadius } from '../services/profile.js'
 import { createInterest, getRandomInterests, getUserInterests, setUserInterests } from '../services/interests.js'
 import useAuthStore from '../stores/useAuthStore.js'
 
 const MAX_INTERESTS = 10
+const MIN_VIBE_RADIUS_KM = 5
+const MAX_VIBE_RADIUS_KM = 25
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -45,6 +47,9 @@ const Profile = () => {
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const [vibeRadiusKm, setVibeRadiusKm] = useState(Math.round((profile?.vibe_radius_meters || 5000) / 1000))
+  const [savingVibeRadius, setSavingVibeRadius] = useState(false)
 
   // ---------------------------------------------------------------------------
   // Profile stats
@@ -222,6 +227,46 @@ const Profile = () => {
   }
 
   // ---------------------------------------------------------------------------
+  // Visible Vibes Editing
+  // ---------------------------------------------------------------------------
+
+  const handleSaveVibeRadius = async () => {
+    if (!user?.id || savingVibeRadius) return
+
+    const radiusMeters = vibeRadiusKm * 1000
+    const currentRadiusMeters = profile?.vibe_radius_meters || 5000
+
+    if (radiusMeters === currentRadiusMeters) return
+
+    setSavingVibeRadius(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const updatedProfile = await updateVibeRadius({
+        userId: user.id,
+        radiusMeters
+      })
+
+      setProfile(updatedProfile)
+
+      await queryClient.invalidateQueries({
+        queryKey: ['nearby-vibes']
+      })
+
+      setSuccess(`Vibe distance updated to ${vibeRadiusKm} km.`)
+    } catch (radiusError) {
+      console.error('Failed to update Vibe distance:', radiusError)
+
+      setError(radiusError.message || 'Could not update Vibe distance.')
+
+      setVibeRadiusKm(Math.round((profile?.vibe_radius_meters || 5000) / 1000))
+    } finally {
+      setSavingVibeRadius(false)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -371,6 +416,50 @@ const Profile = () => {
 
               <p className="mt-1 text-xs font-semibold text-vibe-muted">Chats</p>
             </div>
+          </div>
+        </div>
+
+        {/* Vibe distance */}
+        <div className="mt-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-black text-vibe-petrol">Vibe distance</h3>
+
+              <p className="mt-1 text-xs leading-5 text-vibe-muted">Choose how far away Vibes can appear in your feed.</p>
+            </div>
+
+            <div className="shrink-0 rounded-full bg-vibe-petrol px-3 py-1.5 text-sm font-black text-vibe-surface">{vibeRadiusKm} km</div>
+          </div>
+
+          <div className="mt-4 rounded-3xl bg-vibe-surface p-5 shadow-sm">
+            <input
+              className="w-full accent-vibe-petrol"
+              type="range"
+              min={MIN_VIBE_RADIUS_KM}
+              max={MAX_VIBE_RADIUS_KM}
+              step="1"
+              value={vibeRadiusKm}
+              disabled={savingVibeRadius}
+              onChange={(event) => {
+                setVibeRadiusKm(Number(event.target.value))
+                setError('')
+                setSuccess('')
+              }}
+              onPointerUp={handleSaveVibeRadius}
+              onTouchEnd={handleSaveVibeRadius}
+              onKeyUp={handleSaveVibeRadius}
+            />
+
+            <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-vibe-muted">
+              <span>{MIN_VIBE_RADIUS_KM} km</span>
+              <span>{MAX_VIBE_RADIUS_KM} km</span>
+            </div>
+
+            <p className="mt-4 text-xs leading-5 text-vibe-muted">
+              Your own active Vibes are always shown, even if they are outside this distance.
+            </p>
+
+            {savingVibeRadius && <p className="mt-3 text-xs font-semibold text-vibe-petrol">Saving distance...</p>}
           </div>
         </div>
 

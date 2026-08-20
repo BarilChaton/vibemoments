@@ -3,11 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiMapPin, FiRefreshCw } from 'react-icons/fi'
 import { getNearbyVibes, getVibeMediaUrl } from '../services/vibes.js'
+import useAuthStore from '../stores/useAuthStore.js'
 import useFeedReactionActivity from '../hooks/useFeedReactionActivity.js'
 import VibeCard from '../components/vibes/VibeCard.jsx'
 import VibeViewer from '../components/vibes/VibeViewer.jsx'
 
-const loadNearbyVibes = async () => {
+const loadNearbyVibes = async (radiusMeters) => {
   const position = await Geolocation.getCurrentPosition({
     enableHighAccuracy: true,
     timeout: 10000
@@ -16,7 +17,7 @@ const loadNearbyVibes = async () => {
   const vibes = await getNearbyVibes({
     latitude: position.coords.latitude,
     longitude: position.coords.longitude,
-    radiusMeters: 5000
+    radiusMeters
   })
 
   return Promise.all(
@@ -33,6 +34,11 @@ const loadNearbyVibes = async () => {
 }
 
 const Home = ({ onOpenConversation }) => {
+  const { profile } = useAuthStore()
+
+  const vibeRadiusMeters = profile?.vibe_radius_meters || 5000
+  const vibeRadiusKm = Math.round(vibeRadiusMeters / 1000)
+
   const {
     data: vibes = [],
     isLoading,
@@ -40,8 +46,8 @@ const Home = ({ onOpenConversation }) => {
     error,
     refetch
   } = useQuery({
-    queryKey: ['nearby-vibes'],
-    queryFn: loadNearbyVibes,
+    queryKey: ['nearby-vibes', vibeRadiusMeters],
+    queryFn: () => loadNearbyVibes(vibeRadiusMeters),
     staleTime: 1000 * 30
   })
 
@@ -59,7 +65,7 @@ const Home = ({ onOpenConversation }) => {
 
             <p className="mt-1 flex items-center gap-1 text-sm text-vibe-muted">
               <FiMapPin />
-              Within 5 km
+              Within {vibeRadiusKm} km
             </p>
           </div>
 
@@ -105,7 +111,7 @@ const Home = ({ onOpenConversation }) => {
             <h2 className="text-xl font-bold text-vibe-text">Nothing nearby yet</h2>
 
             <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-              There aren't any active Vibes within 5 km. Be the first to share what's happening.
+              There aren't any active Vibes within {vibeRadiusKm} km. Be the first to share what's happening.
             </p>
           </div>
         </div>
