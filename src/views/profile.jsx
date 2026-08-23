@@ -274,7 +274,7 @@ const Profile = () => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="safe-top shrink-0 px-6 pb-4 pt-5">
+      <header className="shrink-0 px-6 pb-4 pt-5">
         <p className="text-sm font-semibold text-vibe-apricot-dark">YOUR VIBE</p>
 
         <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Profile</h1>

@@ -4,7 +4,7 @@ import { MAX_VIDEO_DURATION } from '../../utils/vibeMedia.js'
 const VibeCaptureScreen = ({ error, onOpenCamera }) => {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="safe-top px-6 pb-4 pt-5">
+      <header className="px-6 pb-4 pt-5">
         <p className="text-sm font-semibold text-vibe-apricot-dark">CAPTURE THE MOMENT</p>
 
         <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Create a Vibe</h1>

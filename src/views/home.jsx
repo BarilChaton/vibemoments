@@ -57,7 +57,7 @@ const Home = ({ onOpenConversation }) => {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="safe-top px-6 pb-4 pt-5">
+      <header className="px-6 pb-4 pt-5">
         <div className="flex items-end justify-between">
           <div>
             <p className="text-sm font-semibold text-vibe-apricot-dark">RIGHT NOW</p>

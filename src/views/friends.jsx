@@ -58,7 +58,7 @@ const Friends = ({ onOpenConversation }) => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <header className="safe-top shrink-0 px-6 pb-4 pt-5">
+      <header className="shrink-0 px-6 pb-4 pt-5">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-vibe-apricot-dark">YOUR PEOPLE</p>

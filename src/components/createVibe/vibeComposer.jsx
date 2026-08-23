@@ -21,7 +21,7 @@ const VibeComposer = ({
 }) => {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="safe-top flex items-center justify-between px-6 pb-4 pt-5">
+      <header className="flex items-center justify-between px-6 pb-4 pt-5">
         <div>
           <p className="text-sm font-semibold text-vibe-apricot-dark">{media.type === 'video' ? 'NEW VIDEO VIBE' : 'NEW VIBE'}</p>
 

@@ -2,7 +2,7 @@ import { FiArrowLeft, FiUserPlus, FiUsers } from 'react-icons/fi'
 
 const ConversationHeader = ({ otherUser, friendshipState, friendshipLoading, friendActionLoading, onBack, onSendFriendRequest }) => {
   return (
-    <header className="safe-top z-20 flex shrink-0 items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-5">
+    <header className="z-20 flex shrink-0 items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-5">
       <button
         className="flex size-10 shrink-0 items-center justify-center rounded-full text-vibe-petrol transition active:scale-95"
         type="button"
