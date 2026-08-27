@@ -63,9 +63,6 @@ Deno.serve(async () => {
       return paths
     })
 
-    console.log('Expired Vibes:', expiredVibes)
-    console.log('Deleting Storage paths:', mediaPaths)
-
     if (mediaPaths.length) {
       const { data: deletedFiles, error: storageError } = await supabase.storage
         .from('vibes')
@@ -86,8 +83,6 @@ Deno.serve(async () => {
           }
         )
       }
-
-      console.log('Deleted Storage objects:', deletedFiles)
     }
 
     const vibeIds = expiredVibes.map((vibe) => vibe.id)

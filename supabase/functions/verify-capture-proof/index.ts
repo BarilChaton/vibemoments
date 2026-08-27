@@ -692,17 +692,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(
-      `Capture session consumed: user=${user.id} device=${deviceId} session=${captureSessionId}`
-    )
-
     // -------------------------------------------------------------------------
     // Success
     // -------------------------------------------------------------------------
-
-    console.log(
-      `Capture proof verified: user=${user.id} device=${deviceId} session=${captureSessionId} type=${mediaType}`
-    )
 
     return jsonResponse({
       valid: true,

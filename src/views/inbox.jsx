@@ -67,6 +67,8 @@ const Inbox = ({ initialConversationId = null }) => {
     staleTime: 1000 * 15
   })
 
+  const unreadConversationCount = conversations.filter((conversation) => Number(conversation.unread_count || 0) > 0).length
+
   // ---------------------------------------------------------------------------
   // Conversation navigation
   // ---------------------------------------------------------------------------
@@ -152,7 +154,7 @@ const Inbox = ({ initialConversationId = null }) => {
             type="button"
             onClick={() => setActiveTab('chats')}>
             Chats
-            {conversations.length > 0 && ` (${conversations.length})`}
+            {unreadConversationCount > 0 && ` (${unreadConversationCount})`}
           </button>
         </div>
       </div>
@@ -262,7 +264,9 @@ const Inbox = ({ initialConversationId = null }) => {
                             className={`min-w-0 flex-1 truncate text-xs ${
                               unreadCount > 0 ? 'font-semibold text-vibe-text' : 'text-vibe-muted'
                             }`}>
-                            {conversation.last_message_body || 'Chat unlocked through a Vibe'}
+                            {conversation.last_message_type === 'gif'
+                              ? 'Sent a GIF'
+                              : conversation.last_message_body || 'Chat unlocked through a Vibe'}
                           </p>
 
                           {conversation.last_message_at && (

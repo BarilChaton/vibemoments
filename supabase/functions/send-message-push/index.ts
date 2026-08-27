@@ -232,7 +232,6 @@ Deno.serve(async (req) => {
           errorCode === 'UNREGISTERED'
 
         if (invalidToken) {
-          console.log('Removing invalid FCM token.')
 
           const { error: deleteError } = await supabase
             .from('push_tokens')

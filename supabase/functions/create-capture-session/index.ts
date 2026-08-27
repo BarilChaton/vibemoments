@@ -285,10 +285,6 @@ Deno.serve(async (req) => {
       console.warn('Unable to update capture device last_seen_at:', updateDeviceError)
     }
 
-    console.log(
-      `Capture session created: user=${user.id} device=${deviceId} session=${captureSession.id} type=${mediaType}`
-    )
-
     return jsonResponse({
       captureSessionId: captureSession.id,
       deviceId: captureSession.device_id,
