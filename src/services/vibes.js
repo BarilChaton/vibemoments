@@ -217,9 +217,7 @@ export const subscribeToFeedVibeReactions = (vibeIds, onReaction) => {
         onReaction(payload.new)
       }
     )
-    .subscribe((status) => {
-      console.log('Feed reaction realtime status:', status)
-    })
+    .subscribe()
 
   return channel
 }
@@ -314,8 +312,6 @@ export const publishVibe = async ({
     // Server-side capture proof verification
     // -------------------------------------------------------------------------
 
-    console.log('[VibeMoments] Verifying capture proof...')
-
     const verification = await verifyCaptureProof({
       captureSessionId,
       nonce: captureNonce,
@@ -327,8 +323,6 @@ export const publishVibe = async ({
       signatureAlgorithm: captureSignatureAlgorithm,
       storagePath: mediaPath
     })
-
-    console.log('[VibeMoments] Capture proof verified:', verification)
 
     if (!verification?.valid) {
       throw new Error('Capture proof verification failed.')

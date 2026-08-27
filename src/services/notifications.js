@@ -28,8 +28,6 @@ const savePushToken = async (token) => {
     console.error('Failed to save push token:', error)
     return
   }
-
-  console.log('Push token saved to Supabase.')
 }
 
 // -----------------------------------------------------------------------------
@@ -42,27 +40,11 @@ const registerPushListeners = async () => {
   listenersRegistered = true
 
   await PushNotifications.addListener('registration', async (token) => {
-    console.log('FCM registration token:', token.value)
-
     await savePushToken(token.value)
   })
 
   await PushNotifications.addListener('registrationError', (error) => {
     console.error('Push notification registration failed:', error)
-  })
-
-  await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('Push notification received:', notification)
-  })
-
-  await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('Push notification opened:', action.notification)
-
-    const conversationId = action.notification.data?.conversationId
-
-    if (conversationId) {
-      console.log('Notification conversation:', conversationId)
-    }
   })
 }
 
@@ -74,7 +56,6 @@ export const registerPushNotifications = async (userId) => {
   if (!userId) return false
 
   if (!Capacitor.isNativePlatform()) {
-    console.log('Push notifications skipped outside native app.')
     return false
   }
 
@@ -90,7 +71,6 @@ export const registerPushNotifications = async (userId) => {
     }
 
     if (permission.receive !== 'granted') {
-      console.log('Push notification permission was not granted.')
       return false
     }
 

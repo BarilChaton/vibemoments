@@ -656,7 +656,7 @@ const Conversation = ({ conversationId, onBack }) => {
   if (conversationError) {
     return (
       <div className="flex flex-1 flex-col">
-        <header className="safe-top flex items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-5">
+        <header className="flex items-center gap-3 border-b border-vibe-petrol/10 bg-vibe-surface px-4 pb-3 pt-5">
           <button
             className="flex size-10 items-center justify-center rounded-full text-vibe-petrol transition active:scale-95"
             type="button"

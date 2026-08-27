@@ -133,7 +133,7 @@ const UserProfile = ({ friendId, onBack, onOpenConversation, onRemoved }) => {
   if (error) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <header className="safe-top flex shrink-0 items-center gap-3 px-4 pb-4 pt-5">
+        <header className="flex shrink-0 items-center gap-3 px-4 pb-4 pt-5">
           <button
             className="flex size-10 items-center justify-center rounded-full text-vibe-petrol active:scale-95"
             type="button"
@@ -164,7 +164,7 @@ const UserProfile = ({ friendId, onBack, onOpenConversation, onRemoved }) => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <header className="safe-top flex shrink-0 items-center gap-3 px-4 pb-4 pt-5">
+      <header className="flex shrink-0 items-center gap-3 px-4 pb-4 pt-5">
         <button
           className="flex size-10 shrink-0 items-center justify-center rounded-full text-vibe-petrol transition active:scale-95"
           type="button"

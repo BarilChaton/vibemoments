@@ -267,10 +267,6 @@ Deno.serve(async (req) => {
         )
       }
 
-      console.log(
-        `Existing capture device confirmed: user=${user.id} device=${deviceId}`
-      )
-
       return jsonResponse({
         registered: true,
         existing: true,
@@ -304,10 +300,6 @@ Deno.serve(async (req) => {
         500
       )
     }
-
-    console.log(
-      `Capture device registered: user=${user.id} device=${deviceId}`
-    )
 
     return jsonResponse(
       {

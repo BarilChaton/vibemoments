@@ -106,8 +106,6 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     setError('')
 
     try {
-      console.log('[VibeMoments] Changing secure capture mode:', nextMode)
-
       /*
        * Do not allow the old session to remain usable while a session
        * for the newly selected media type is being created.
@@ -115,8 +113,6 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       setCaptureSession(null)
 
       const session = await createCaptureSession(nextMode, captureDeviceId)
-
-      console.log('[VibeMoments] New capture session created:', JSON.stringify(session, null, 2))
 
       setCaptureSession(session)
       setCaptureMode(nextMode)
@@ -143,20 +139,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     setError('')
 
     try {
-      console.log('[VibeMoments] Ensuring capture device is registered...')
-
       const { identity } = await registerCaptureDevice()
-
-      console.log('[VibeMoments] Capture device ready:', identity.deviceId)
-
       setCaptureDeviceId(identity.deviceId)
-
-      console.log('[VibeMoments] Creating capture session:', mediaType)
-
       const session = await createCaptureSession(mediaType, identity.deviceId)
-
-      console.log('[VibeMoments] Capture session created:', JSON.stringify(session, null, 2))
-
       setCaptureSession(session)
       setCaptureMode(mediaType)
       setCameraOpen(true)
@@ -189,8 +174,6 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     setError('')
 
     try {
-      console.log('[VibeMoments] Camera capture received:', capture)
-
       if (!capture?.path) {
         throw new Error('The camera did not return a usable media file.')
       }
@@ -438,17 +421,6 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
           throw new Error(`Videos can be a maximum of ${MAX_VIDEO_DURATION} seconds.`)
         }
       }
-
-      console.log('[VibeMoments] Publishing secure capture:', {
-        type: media.type,
-        mimeType: media.mimeType,
-        captureSessionId: media.captureSessionId,
-        deviceId: media.deviceId,
-        sha256: media.sha256,
-        proofVersion: media.proofVersion,
-        signatureAlgorithm: media.signatureAlgorithm,
-        hasSignature: Boolean(media.captureSignature)
-      })
 
       const file = await createMediaFile(media)
       const thumbnailFile = await createMediaThumbnail(media)

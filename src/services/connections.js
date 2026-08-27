@@ -281,9 +281,7 @@ export const subscribeToConversationMessages = (conversationId, onMessage) => {
         }
       }
     )
-    .subscribe((status) => {
-      console.log('Conversation realtime status:', status)
-    })
+    .subscribe()
 
   return channel
 }
@@ -314,9 +312,7 @@ export const subscribeToInboxMessages = (onMessage) => {
         onMessage(payload.new)
       }
     )
-    .subscribe((status) => {
-      console.log('Inbox realtime status:', status)
-    })
+    .subscribe()
 }
 
 export const unsubscribeFromInboxMessages = async (channel) => {
@@ -367,9 +363,7 @@ export const subscribeToConversationTyping = (conversationId, onTyping) => {
     .on('broadcast', { event: 'typing' }, ({ payload }) => {
       onTyping(payload)
     })
-    .subscribe((status) => {
-      console.log('Conversation typing realtime status:', status)
-    })
+    .subscribe()
 
   return channel
 }

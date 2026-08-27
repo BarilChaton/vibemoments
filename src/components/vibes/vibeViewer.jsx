@@ -134,7 +134,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
       {active && (
         <>
           {/* Top controls */}
-          <div className="safe-top absolute inset-x-0 top-2 z-30 flex items-center justify-between px-4 py-2">
+          <div className="absolute inset-x-0 top-2 z-30 flex items-center justify-between px-4 py-2">
             <button
               className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-black/25 text-white backdrop-blur-md transition active:scale-95"
               type="button"
