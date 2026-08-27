@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { getConversations, getIncomingConnectionRequests } from '../services/connections.js'
 import ConnectionRequestCard from '../components/inbox/ConnectionRequestCard.jsx'
-import Conversation from './Conversation.jsx'
+import Conversation from './conversation.jsx'
 
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
 
-const formatConversationTime = (createdAt) => {
+const formatConversationTime = (createdAt, language) => {
   if (!createdAt) return ''
 
   const date = new Date(createdAt)
@@ -17,13 +18,13 @@ const formatConversationTime = (createdAt) => {
   const sameDay = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
 
   if (sameDay) {
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(language, {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date)
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(language, {
     month: 'short',
     day: 'numeric'
   }).format(date)
@@ -34,6 +35,7 @@ const formatConversationTime = (createdAt) => {
 // -----------------------------------------------------------------------------
 
 const Inbox = ({ initialConversationId = null }) => {
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState('chats')
@@ -68,6 +70,8 @@ const Inbox = ({ initialConversationId = null }) => {
   })
 
   const unreadConversationCount = conversations.filter((conversation) => Number(conversation.unread_count || 0) > 0).length
+
+  const language = i18n.resolvedLanguage || i18n.language
 
   // ---------------------------------------------------------------------------
   // Conversation navigation
@@ -127,11 +131,11 @@ const Inbox = ({ initialConversationId = null }) => {
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
       <header className="shrink-0 px-6 pb-4 pt-5">
-        <p className="text-sm font-semibold text-vibe-apricot-dark">CONNECTIONS</p>
+        <p className="text-sm font-semibold text-vibe-apricot-dark">{t('inbox.eyebrow')}</p>
 
-        <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Inbox</h1>
+        <h1 className="mt-1 text-3xl font-black text-vibe-petrol">{t('inbox.title')}</h1>
 
-        <p className="mt-2 text-sm text-vibe-muted">Requests and conversations started through nearby Vibes.</p>
+        <p className="mt-2 text-sm text-vibe-muted">{t('inbox.description')}</p>
       </header>
 
       {/* Tabs */}
@@ -143,7 +147,7 @@ const Inbox = ({ initialConversationId = null }) => {
             }`}
             type="button"
             onClick={() => setActiveTab('requests')}>
-            Requests
+            {t('inbox.tabs.requests')}
             {requests.length > 0 && ` (${requests.length})`}
           </button>
 
@@ -153,7 +157,7 @@ const Inbox = ({ initialConversationId = null }) => {
             }`}
             type="button"
             onClick={() => setActiveTab('chats')}>
-            Chats
+            {t('inbox.tabs.chats')}
             {unreadConversationCount > 0 && ` (${unreadConversationCount})`}
           </button>
         </div>
@@ -172,9 +176,7 @@ const Inbox = ({ initialConversationId = null }) => {
 
             {requestsError && (
               <div className="py-10 text-center">
-                <p className="text-sm font-medium text-red-500">Could not load your requests.</p>
-
-                <p className="mt-2 text-xs text-vibe-muted">{requestsError.message}</p>
+                <p className="text-sm font-medium text-red-500">{t('inbox.requests.loadError')}</p>
               </div>
             )}
 
@@ -184,11 +186,9 @@ const Inbox = ({ initialConversationId = null }) => {
                   <div className="size-3 rounded-full bg-vibe-apricot" />
                 </div>
 
-                <p className="mt-4 font-semibold text-vibe-petrol">No requests right now</p>
+                <p className="mt-4 font-semibold text-vibe-petrol">{t('inbox.requests.emptyTitle')}</p>
 
-                <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-                  If someone swipes right on one of your Vibes and sends a message, it will appear here.
-                </p>
+                <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{t('inbox.requests.emptyDescription')}</p>
               </div>
             )}
 
@@ -213,9 +213,7 @@ const Inbox = ({ initialConversationId = null }) => {
 
             {conversationsError && (
               <div className="py-10 text-center">
-                <p className="text-sm font-medium text-red-500">Could not load your conversations.</p>
-
-                <p className="mt-2 text-xs text-vibe-muted">{conversationsError.message}</p>
+                <p className="text-sm font-medium text-red-500">{t('inbox.chats.loadError')}</p>
               </div>
             )}
 
@@ -225,18 +223,16 @@ const Inbox = ({ initialConversationId = null }) => {
                   <div className="size-3 rounded-full bg-vibe-petrol" />
                 </div>
 
-                <p className="mt-4 font-semibold text-vibe-petrol">No conversations yet</p>
+                <p className="mt-4 font-semibold text-vibe-petrol">{t('inbox.chats.emptyTitle')}</p>
 
-                <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-                  Conversations appear here after a Vibe creator replies to a connection request.
-                </p>
+                <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{t('inbox.chats.emptyDescription')}</p>
               </div>
             )}
 
             {!conversationsLoading && !conversationsError && conversations.length > 0 && (
               <div className="space-y-2">
                 {conversations.map((conversation) => {
-                  const displayName = conversation.otherUser?.display_name || 'Conversation'
+                  const displayName = conversation.otherUser?.display_name || t('common.conversationFallback')
                   const initial = displayName.slice(0, 1).toUpperCase()
                   const unreadCount = Number(conversation.unread_count || 0)
 
@@ -265,8 +261,8 @@ const Inbox = ({ initialConversationId = null }) => {
                               unreadCount > 0 ? 'font-semibold text-vibe-text' : 'text-vibe-muted'
                             }`}>
                             {conversation.last_message_type === 'gif'
-                              ? 'Sent a GIF'
-                              : conversation.last_message_body || 'Chat unlocked through a Vibe'}
+                              ? t('inbox.chats.sentGif')
+                              : conversation.last_message_body || t('inbox.chats.unlocked')}
                           </p>
 
                           {conversation.last_message_at && (
@@ -274,7 +270,7 @@ const Inbox = ({ initialConversationId = null }) => {
                               className={`shrink-0 text-[11px] ${
                                 unreadCount > 0 ? 'font-semibold text-vibe-apricot-dark' : 'text-vibe-muted'
                               }`}>
-                              {formatConversationTime(conversation.last_message_at)}
+                              {formatConversationTime(conversation.last_message_at, language)}
                             </span>
                           )}
                         </div>

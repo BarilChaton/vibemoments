@@ -1,19 +1,21 @@
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { FiHome, FiMessageCircle, FiPlus, FiUser, FiUsers } from 'react-icons/fi'
 import { getTotalUnreadCount, subscribeToInboxMessages, unsubscribeFromInboxMessages } from '../../services/connections.js'
 import useChatStore from '../../stores/useChatStore.js'
 
 const BottomNavigation = ({ activeView, onChange }) => {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { activeConversationId } = useChatStore()
 
   const items = [
-    { id: 'home', label: 'Vibes', icon: FiHome },
-    { id: 'friends', label: 'Friends', icon: FiUsers },
-    { id: 'create', label: 'Create', icon: FiPlus },
-    { id: 'inbox', label: 'Inbox', icon: FiMessageCircle },
-    { id: 'profile', label: 'Profile', icon: FiUser }
+    { id: 'home', label: t('navigation.vibes'), icon: FiHome },
+    { id: 'friends', label: t('navigation.friends'), icon: FiUsers },
+    { id: 'create', label: t('navigation.create'), icon: FiPlus },
+    { id: 'inbox', label: t('navigation.inbox'), icon: FiMessageCircle },
+    { id: 'profile', label: t('navigation.profile'), icon: FiUser }
   ]
 
   const { data: unreadCount = 0 } = useQuery({

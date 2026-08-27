@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { App } from '@capacitor/app'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { FiArrowLeft } from 'react-icons/fi'
 import {
   getConversation,
@@ -26,6 +27,7 @@ import MessageComposer from '../components/conversation/messageComposer.jsx'
 const MAX_MESSAGE_LENGTH = 1000
 
 const Conversation = ({ conversationId, onBack }) => {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const { setActiveConversationId } = useChatStore()
   const queryClient = useQueryClient()
@@ -262,7 +264,7 @@ const Conversation = ({ conversationId, onBack }) => {
       })
     } catch (sendError) {
       console.error('Failed to send message:', sendError)
-      setError(sendError.message || 'Could not send your message.')
+      setError(t('conversation.messages.sendError'))
     } finally {
       setSending(false)
     }
@@ -312,7 +314,7 @@ const Conversation = ({ conversationId, onBack }) => {
       ])
     } catch (gifError) {
       console.error('Failed to send GIF:', gifError)
-      setError(gifError.message || 'Could not send the GIF.')
+      setError(t('conversation.messages.gifSendError'))
     } finally {
       setSending(false)
     }
@@ -378,7 +380,7 @@ const Conversation = ({ conversationId, onBack }) => {
       })
     } catch (friendRequestError) {
       console.error('Failed to send friend request:', friendRequestError)
-      setFriendError(friendRequestError.message || 'Could not send friend request.')
+      setFriendError(t('conversation.friendship.sendError'))
     } finally {
       setFriendActionLoading(false)
     }
@@ -411,7 +413,7 @@ const Conversation = ({ conversationId, onBack }) => {
       ])
     } catch (friendResponseError) {
       console.error('Failed to respond to friend request:', friendResponseError)
-      setFriendError(friendResponseError.message || 'Could not update friend request.')
+      setFriendError(t('conversation.friendship.respondError'))
     } finally {
       setFriendActionLoading(false)
     }
@@ -643,7 +645,7 @@ const Conversation = ({ conversationId, onBack }) => {
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
           <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
-          <p className="mt-4 text-sm text-vibe-muted">Loading conversation...</p>
+          <p className="mt-4 text-sm text-vibe-muted">{t('conversation.loading')}</p>
         </div>
       </div>
     )
@@ -664,13 +666,12 @@ const Conversation = ({ conversationId, onBack }) => {
             <FiArrowLeft className="text-xl" />
           </button>
 
-          <p className="font-bold text-vibe-petrol">Conversation</p>
+          <p className="font-bold text-vibe-petrol">{t('common.conversation')}</p>
         </header>
 
         <div className="flex flex-1 items-center justify-center px-6 text-center">
           <div>
-            <p className="font-semibold text-vibe-text">Couldn't load this conversation.</p>
-            <p className="mt-2 text-sm text-vibe-muted">{conversationError.message}</p>
+            <p className="font-semibold text-vibe-text">{t('conversation.loadError')}</p>
           </div>
         </div>
       </div>

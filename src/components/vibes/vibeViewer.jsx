@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { FiMapPin, FiX } from 'react-icons/fi'
 import {
   getVibeInterests,
@@ -11,7 +12,7 @@ import {
 import { getConnectionRequestForVibe, getExistingConversationBetweenUsers } from '../../services/connections.js'
 import { formatVibeLocation } from '../../utils/formatVibeLocation.js'
 import useAuthStore from '../../stores/useAuthStore.js'
-import ConnectionRequestComposer from './ConnectionRequestComposer.jsx'
+import ConnectionRequestComposer from './connectionRequestComposer.jsx'
 
 const REACTIONS = ['❤️', '😂', '🔥', '😍', '👏', '😮']
 
@@ -24,20 +25,26 @@ const TRANSITION_DURATION = 280
 // Helpers
 // -----------------------------------------------------------------------------
 
-const formatAge = (createdAt) => {
+const formatAge = (createdAt, t) => {
   const seconds = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
 
-  if (seconds < 60) return 'Just now'
+  if (seconds < 60) return t('vibe.time.justNow')
 
   const minutes = Math.floor(seconds / 60)
 
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 60) {
+    return t('vibe.time.minutesAgo', { count: minutes })
+  }
 
   const hours = Math.floor(minutes / 60)
 
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) {
+    return t('vibe.time.hoursAgo', { count: hours })
+  }
 
-  return `${Math.floor(hours / 24)}d ago`
+  return t('vibe.time.daysAgo', {
+    count: Math.floor(hours / 24)
+  })
 }
 
 const loadVibeDetails = async (vibe) => {
@@ -54,6 +61,8 @@ const loadVibeDetails = async (vibe) => {
 // -----------------------------------------------------------------------------
 
 const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onReaction }) => {
+  const { t } = useTranslation()
+
   const videoRef = useRef(null)
   const [videoReady, setVideoReady] = useState(false)
 
@@ -75,7 +84,6 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
 
     if (active) {
       video.currentTime = 0
-
       video.play().catch(() => {})
     } else {
       video.pause()
@@ -115,7 +123,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
         <div className="absolute inset-0 flex items-center justify-center bg-black">
           <div className="text-center">
             <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
-            <p className="mt-4 text-sm text-white/60">Loading Vibe...</p>
+            <p className="mt-4 text-sm text-white/60">{t('vibe.viewer.loading')}</p>
           </div>
         </div>
       )}
@@ -123,8 +131,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
       {error && !fallbackImage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black px-6 text-center text-white">
           <div>
-            <p className="font-semibold">Couldn't load this Vibe.</p>
-            <p className="mt-2 text-sm text-white/60">{error.message}</p>
+            <p className="font-semibold">{t('vibe.viewer.loadError')}</p>
           </div>
         </div>
       )}
@@ -147,7 +154,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
 
             <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
               <div className="size-2 rounded-full bg-vibe-lime" />
-              LIVE
+              {t('vibe.viewer.live')}
             </div>
           </div>
 
@@ -177,9 +184,12 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
 
               <div className="mt-1 flex items-center gap-1.5 text-xs text-white/70">
                 <FiMapPin />
-                <span className="truncate">{formatVibeLocation(vibe)}</span>
+
+                <span className="truncate">{formatVibeLocation(vibe, t('vibe.locationFallback'))}</span>
+
                 <span>·</span>
-                <span className="shrink-0">{formatAge(vibe.created_at)}</span>
+
+                <span className="shrink-0">{formatAge(vibe.created_at, t)}</span>
               </div>
 
               {vibe.caption && <p className="mt-3 text-sm leading-6 text-white/95">{vibe.caption}</p>}
@@ -229,6 +239,7 @@ const VibeSlide = ({ vibe, active = false, floatingReactions = [], onClose, onRe
 // -----------------------------------------------------------------------------
 
 const VibeViewer = ({ vibes, initialIndex, onClose, onOpenConversation }) => {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
 
   const [activeIndex, setActiveIndex] = useState(initialIndex)
@@ -578,21 +589,21 @@ const VibeViewer = ({ vibes, initialIndex, onClose, onOpenConversation }) => {
   // ---------------------------------------------------------------------------
 
   const getConnectionSwipeLabel = () => {
-    if (connectedToCreator) return 'Open chat →'
-    if (connectionStatus === 'accepted') return 'Open chat →'
-    if (connectionStatus === 'pending') return 'Request sent'
-    if (connectionStatus === 'expired') return 'Request expired'
-    if (connectionStatus === 'declined') return 'Request declined'
+    if (connectedToCreator) return t('vibe.connection.openChat')
+    if (connectionStatus === 'accepted') return t('vibe.connection.openChat')
+    if (connectionStatus === 'pending') return t('vibe.connection.requestSent')
+    if (connectionStatus === 'expired') return t('vibe.connection.requestExpired')
+    if (connectionStatus === 'declined') return t('vibe.connection.requestDeclined')
 
-    return 'Connect →'
+    return t('vibe.connection.connect')
   }
 
   const getConnectionStateLabel = () => {
-    if (connectedToCreator) return 'Connected · Swipe right to chat'
-    if (connectionStatus === 'accepted') return 'Connected · Swipe right to chat'
-    if (connectionStatus === 'pending') return 'Request sent'
-    if (connectionStatus === 'declined') return 'Request declined'
-    if (connectionStatus === 'expired') return 'Request expired'
+    if (connectedToCreator) return t('vibe.connection.connectedSwipe')
+    if (connectionStatus === 'accepted') return t('vibe.connection.connectedSwipe')
+    if (connectionStatus === 'pending') return t('vibe.connection.requestSent')
+    if (connectionStatus === 'declined') return t('vibe.connection.requestDeclined')
+    if (connectionStatus === 'expired') return t('vibe.connection.requestExpired')
 
     return null
   }

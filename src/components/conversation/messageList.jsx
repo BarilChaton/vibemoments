@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { formatMessageTime, renderMessageBody } from '../../utils/conversationMessages.jsx'
 import GifMessage from './gifMessage.jsx'
 
@@ -11,6 +12,8 @@ const MessageList = ({
   messagesEndRef,
   onMediaLoad
 }) => {
+  const { t } = useTranslation()
+
   return (
     <div ref={scrollContainerRef} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-5 pt-7">
       <div ref={messagesContentRef}>
@@ -22,17 +25,15 @@ const MessageList = ({
 
         {messagesError && (
           <div className="py-10 text-center">
-            <p className="text-sm font-medium text-red-500">Could not load messages.</p>
+            <p className="text-sm font-medium text-red-500">{t('conversation.messages.loadError')}</p>
           </div>
         )}
 
         {!messagesLoading && !messagesError && messages.length === 0 && (
           <div className="py-12 text-center">
-            <p className="font-semibold text-vibe-petrol">Conversation unlocked</p>
+            <p className="font-semibold text-vibe-petrol">{t('conversation.messages.emptyTitle')}</p>
 
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-              You connected through a Vibe. Messages between you will appear here.
-            </p>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{t('conversation.messages.emptyDescription')}</p>
           </div>
         )}
 

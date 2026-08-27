@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiArrowLeft, FiMapPin } from 'react-icons/fi'
 import { completeOnboarding } from '../../services/onboarding.js'
 import useAuthStore from '../../stores/useAuthStore.js'
 
 const LocationStep = ({ onBack }) => {
+  const { t } = useTranslation()
   const { user, setProfile } = useAuthStore()
 
   const [loading, setLoading] = useState(false)
@@ -19,7 +21,7 @@ const LocationStep = ({ onBack }) => {
       const allowed = permission.location === 'granted' || permission.coarseLocation === 'granted'
 
       if (!allowed) {
-        setError('Location permission is required to discover nearby Vibes.')
+        setError(t('onboarding.location.permissionRequired'))
         return
       }
 
@@ -30,8 +32,9 @@ const LocationStep = ({ onBack }) => {
 
       const profile = await completeOnboarding(user.id)
       setProfile(profile)
-    } catch (error) {
-      setError(error.message)
+    } catch (locationError) {
+      console.error('Failed to enable onboarding location:', locationError)
+      setError(t('onboarding.location.error'))
     } finally {
       setLoading(false)
     }
@@ -44,17 +47,15 @@ const LocationStep = ({ onBack }) => {
         type="button"
         onClick={onBack}>
         <FiArrowLeft />
-        Back
+        {t('common.back')}
       </button>
 
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">Step 3 of 3</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">{t('onboarding.location.step')}</p>
 
-        <h1 className="mt-3 text-3xl font-black text-vibe-text">See what’s happening around you</h1>
+        <h1 className="mt-3 text-3xl font-black text-vibe-text">{t('onboarding.location.title')}</h1>
 
-        <p className="mt-3 leading-6 text-vibe-muted">
-          VibeMoments uses your location to find Vibes happening nearby and to understand which moments are relevant to you.
-        </p>
+        <p className="mt-3 leading-6 text-vibe-muted">{t('onboarding.location.description')}</p>
       </div>
 
       <div className="mt-12 flex flex-1 flex-col items-center justify-center text-center">
@@ -62,20 +63,17 @@ const LocationStep = ({ onBack }) => {
           <FiMapPin className="text-4xl text-vibe-petrol" />
         </div>
 
-        <h2 className="mt-8 text-xl font-bold text-vibe-text">Your location stays private</h2>
+        <h2 className="mt-8 text-xl font-bold text-vibe-text">{t('onboarding.location.privacyTitle')}</h2>
 
-        <p className="mt-3 max-w-xs text-sm leading-6 text-vibe-muted">
-          Other users will not see your live GPS position. Location is used to discover nearby Vibes and to attach approximate location
-          information to moments you post.
-        </p>
+        <p className="mt-3 max-w-xs text-sm leading-6 text-vibe-muted">{t('onboarding.location.privacyDescription')}</p>
 
         <div className="mt-8 rounded-2xl border border-vibe-petrol/10 bg-vibe-surface px-5 py-4 text-left">
-          <p className="text-sm font-semibold text-vibe-text">What we use it for</p>
+          <p className="text-sm font-semibold text-vibe-text">{t('onboarding.location.usesTitle')}</p>
 
           <ul className="mt-3 space-y-2 text-sm text-vibe-muted">
-            <li>• Find Vibes within your local area</li>
-            <li>• Calculate approximate distance</li>
-            <li>• Help rank nearby moments</li>
+            <li>• {t('onboarding.location.uses.findNearby')}</li>
+            <li>• {t('onboarding.location.uses.distance')}</li>
+            <li>• {t('onboarding.location.uses.ranking')}</li>
           </ul>
         </div>
 
@@ -88,7 +86,7 @@ const LocationStep = ({ onBack }) => {
           type="button"
           disabled={loading}
           onClick={handleEnableLocation}>
-          {loading ? 'Requesting location...' : 'Enable location'}
+          {loading ? t('onboarding.location.requesting') : t('onboarding.location.enable')}
         </button>
       </div>
     </div>

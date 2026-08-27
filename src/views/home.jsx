@@ -6,8 +6,8 @@ import { getNearbyVibes, getVibeMediaUrl } from '../services/vibes.js'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '../stores/useAuthStore.js'
 import useFeedReactionActivity from '../hooks/useFeedReactionActivity.js'
-import VibeCard from '../components/vibes/VibeCard.jsx'
-import VibeViewer from '../components/vibes/VibeViewer.jsx'
+import VibeCard from '../components/vibes/vibeCard.jsx'
+import VibeViewer from '../components/vibes/vibeViewer.jsx'
 
 const loadNearbyVibes = async (radiusMeters) => {
   const position = await Geolocation.getCurrentPosition({
@@ -63,6 +63,7 @@ const Home = ({ onOpenConversation }) => {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-sm font-semibold text-vibe-apricot-dark">{t('home.eyebrow')}</p>
+
             <h1 className="mt-1 text-3xl font-black text-vibe-petrol">{t('home.title')}</h1>
 
             <p className="mt-1 flex items-center gap-1 text-sm text-vibe-muted">
@@ -85,6 +86,7 @@ const Home = ({ onOpenConversation }) => {
         <div className="flex flex-1 items-center justify-center px-6">
           <div className="text-center">
             <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
+
             <p className="mt-4 text-sm text-vibe-muted">{t('home.finding')}</p>
           </div>
         </div>
@@ -93,13 +95,13 @@ const Home = ({ onOpenConversation }) => {
           <div>
             <h2 className="text-lg font-bold text-vibe-text">{t('home.error.title')}</h2>
 
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{error.message || `${t('home.error.fallback')}`}</p>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{t('home.error.fallback')}</p>
 
             <button
               className="mt-5 rounded-2xl bg-vibe-petrol px-5 py-3 text-sm font-bold text-vibe-surface active:scale-95"
               type="button"
               onClick={() => refetch()}>
-              Try again
+              {t('common.tryAgain')}
             </button>
           </div>
         </div>
@@ -109,6 +111,7 @@ const Home = ({ onOpenConversation }) => {
             <div className="mx-auto mb-5 size-3 rounded-full bg-vibe-lime shadow-lg shadow-vibe-lime/30" />
 
             <h2 className="text-xl font-bold text-vibe-text">{t('home.empty.title')}</h2>
+
             <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
               {t('home.empty.description', { distance: vibeRadiusKm })}
             </p>

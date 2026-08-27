@@ -1,0 +1,439 @@
+{
+  "common": {
+    "appName": "VibeMoments",
+    "back": "Tillbaka",
+    "continue": "Fortsätt",
+    "cancel": "Avbryt",
+    "edit": "Redigera",
+    "save": "Spara",
+    "saving": "Sparar...",
+    "sending": "Skickar...",
+    "tryAgain": "Försök igen",
+    "profile": "Profil",
+    "conversation": "Konversation",
+    "friends": "Vänner",
+    "vibeUser": "Vibe-användare",
+    "conversationFallback": "Konversation",
+    "someone": "Någon",
+    "someoneNearby": "Någon i närheten",
+    "thisPerson": "Den här personen",
+    "nearby": "I närheten",
+    "notAuthenticated": "Inte inloggad"
+  },
+
+  "navigation": {
+    "vibes": "Vibes",
+    "friends": "Vänner",
+    "create": "Skapa",
+    "inbox": "Inkorg",
+    "profile": "Profil"
+  },
+
+  "auth": {
+    "tagline": "Se vad som händer omkring dig. Just nu.",
+
+    "login": {
+      "title": "Välkommen tillbaka",
+      "description": "Logga in för att se vad som händer i närheten.",
+      "button": "Logga in",
+      "newUser": "Ny på VibeMoments?"
+    },
+
+    "register": {
+      "title": "Skapa ditt konto",
+      "description": "Häng med i de Vibes som händer omkring dig.",
+      "button": "Skapa konto",
+      "existingUser": "Har du redan ett konto?",
+      "confirmationEmail": "Kontrollera din e-post för att bekräfta ditt konto."
+    },
+
+    "google": "Fortsätt med Google",
+    "or": "eller",
+    "emailPlaceholder": "E-post",
+    "passwordPlaceholder": "Lösenord",
+    "pleaseWait": "Vänta..."
+  },
+
+  "onboarding": {
+    "identity": {
+      "step": "Steg 1 av 3",
+      "title": "Välj din Vibe-identitet",
+      "description": "Andra personer i närheten behöver inte känna till ditt riktiga namn. Använd namnet vi skapade åt dig eller skapa ett eget.",
+      "displayName": "Visningsnamn",
+      "generateAnother": "Generera ett nytt",
+      "previousNames": "Tidigare namn",
+      "nameExplanation": "Det här är namnet som andra ser när du publicerar eller reagerar på en Vibe.",
+      "minimumLengthError": "Ditt visningsnamn måste innehålla minst 3 tecken.",
+      "saving": "Sparar..."
+    },
+
+    "interests": {
+      "step": "Steg 2 av 3",
+      "title": "Vad är din vibe?",
+      "description": "Välj minst {{count}} saker du gillar. Hittar du inte något? Lägg till ett eget intresse.",
+      "addPlaceholder": "Lägg till ett intresse...",
+      "loading": "Laddar intressen...",
+      "showDifferent": "Visa andra intressen",
+      "selected": "{{count}} valda",
+      "moreNeeded": "{{count}} till behövs",
+      "saving": "Sparar..."
+    },
+
+    "location": {
+      "step": "Steg 3 av 3",
+      "title": "Se vad som händer omkring dig",
+      "description": "VibeMoments använder din plats för att hitta Vibes i närheten och förstå vilka ögonblick som är relevanta för dig.",
+      "privacyTitle": "Din plats förblir privat",
+      "privacyDescription": "Andra användare ser inte din aktuella GPS-position. Din plats används för att hitta Vibes i närheten och för att lägga till ungefärlig platsinformation till de ögonblick du publicerar.",
+      "usesTitle": "Vad vi använder den till",
+      "uses": {
+        "findNearby": "Hitta Vibes i ditt närområde",
+        "distance": "Beräkna ungefärligt avstånd",
+        "ranking": "Hjälpa till att rangordna ögonblick i närheten"
+      },
+      "permissionRequired": "Platsbehörighet krävs för att hitta Vibes i närheten.",
+      "requesting": "Begär platsåtkomst...",
+      "enable": "Aktivera platsåtkomst"
+    }
+  },
+
+  "home": {
+    "eyebrow": "JUST NU",
+    "title": "Vibes i närheten",
+    "withinDistance": "Inom {{distance}} km",
+    "finding": "Letar efter Vibes i närheten...",
+
+    "error": {
+      "title": "Kunde inte ladda Vibes i närheten",
+      "fallback": "Något gick fel när Vibes i närheten skulle laddas."
+    },
+
+    "empty": {
+      "title": "Inget i närheten ännu",
+      "description": "Det finns inga aktiva Vibes inom {{distance}} km. Bli den första att dela vad som händer."
+    }
+  },
+
+  "vibe": {
+    "locationFallback": "I närheten",
+
+    "time": {
+      "now": "Nu",
+      "justNow": "Precis nu",
+      "minutesShort": "{{count}}m",
+      "hoursShort": "{{count}}h",
+      "daysShort": "{{count}}d",
+      "minutesAgo": "{{count}}m sedan",
+      "hoursAgo": "{{count}}h sedan",
+      "daysAgo": "{{count}}d sedan"
+    },
+
+    "viewer": {
+      "loading": "Laddar Vibe...",
+      "loadError": "Kunde inte ladda denna Vibe.",
+      "live": "LIVE"
+    },
+
+    "connection": {
+      "connect": "Anslut →",
+      "openChat": "Öppna chatt →",
+      "requestSent": "Förfrågan skickad",
+      "requestExpired": "Förfrågan har gått ut",
+      "requestDeclined": "Förfrågan avböjd",
+      "connectedSwipe": "Ansluten · Svep åt höger för att chatta",
+
+      "composer": {
+        "eyebrow": "Anslut genom denna Vibe",
+        "title": "Säg något till {{name}}",
+        "oneMessageTitle": "Du får skicka ett meddelande.",
+        "oneMessageDescription": "Om personen svarar inom en timme låses konversationen upp. Om inget svar kommer går förfrågan ut och du kan inte kontakta personen igen genom denna Vibe.",
+        "placeholder": "Skriv ditt meddelande...",
+        "send": "Skicka ditt meddelande",
+        "sending": "Skickar...",
+        "alreadyUsed": "Du har redan använt din kontaktförfrågan för denna Vibe.",
+        "sendError": "Det gick inte att skicka ditt meddelande."
+      }
+    }
+  },
+
+  "inbox": {
+    "eyebrow": "KONTAKTER",
+    "title": "Inkorg",
+    "description": "Förfrågningar och konversationer som startats genom Vibes i närheten.",
+
+    "tabs": {
+      "requests": "Förfrågningar",
+      "chats": "Chattar"
+    },
+
+    "requests": {
+      "loadError": "Det gick inte att ladda dina förfrågningar.",
+      "emptyTitle": "Inga förfrågningar just nu",
+      "emptyDescription": "Om någon sveper åt höger på en av dina Vibes och skickar ett meddelande visas det här."
+    },
+
+    "chats": {
+      "loadError": "Det gick inte att ladda dina konversationer.",
+      "emptyTitle": "Inga konversationer ännu",
+      "emptyDescription": "Konversationer visas här när skaparen av en Vibe svarar på en kontaktförfrågan.",
+      "sentGif": "Skickade en GIF",
+      "unlocked": "Chatt upplåst genom en Vibe"
+    }
+  },
+
+  "connectionRequest": {
+    "someoneNearby": "Någon i närheten",
+    "subtitle": "Kontaktade dig genom din Vibe",
+    "pending": "Väntar",
+    "replyPlaceholder": "Svara för att låsa upp chatten...",
+    "replying": "Svarar...",
+    "replyAndUnlock": "Svara och lås upp chatten",
+    "replyError": "Det gick inte att skicka ditt svar."
+  },
+
+  "conversation": {
+    "connectedThroughVibe": "Anslutna genom en Vibe",
+    "friends": "Vänner",
+
+    "friendship": {
+      "addFriend": "Lägg till vän",
+      "sending": "Skickar...",
+      "requestSent": "Förfrågan skickad",
+      "requestTitle": "Vänförfrågan",
+      "requestDescription": "{{name}} vill lägga till dig som vän.",
+      "decline": "Avböj",
+      "accept": "Acceptera",
+      "sendError": "Det gick inte att skicka vänförfrågan.",
+      "respondError": "Det gick inte att uppdatera vänförfrågan."
+    },
+
+    "messages": {
+      "placeholder": "Meddelande...",
+      "loadError": "Det gick inte att ladda meddelanden.",
+      "emptyTitle": "Konversationen är upplåst",
+      "emptyDescription": "Ni fick kontakt genom en Vibe. Era meddelanden visas här.",
+      "sendError": "Det gick inte att skicka ditt meddelande.",
+      "gifSendError": "Det gick inte att skicka GIF:en."
+    },
+
+    "typing": "{{name}} skriver...",
+
+    "loading": "Laddar konversation...",
+    "loadError": "Kunde inte ladda denna konversation.",
+
+    "gifPicker": {
+      "searchPlaceholder": "Sök på KLIPY",
+      "loadError": "Kunde inte ladda GIF:ar.",
+      "loadErrorFallback": "Det gick inte att ladda GIF:ar.",
+      "empty": "Inga GIF:ar hittades.",
+      "noMore": "Inga fler GIF:ar",
+      "poweredBy": "Drivs av KLIPY",
+      "imageAlt": "GIF"
+    }
+  },
+
+  "createVibe": {
+    "capture": {
+      "eyebrow": "FÅNGA ÖGONBLICKET",
+      "title": "Skapa en Vibe",
+      "description": "Dela vad som händer omkring dig just nu.",
+      "openCamera": "Öppna kameran",
+      "cameraDescription": "Ta ett foto eller spela in en video",
+      "photo": "Foto",
+      "videoMaximum": "Upp till {{seconds}} sekunder",
+      "explanation": "Fånga vad som händer omkring dig just nu och dela det med personer i närheten."
+    },
+
+    "camera": {
+      "preparingSecureCapture": "Förbereder säker fotografering..."
+    },
+
+    "composer": {
+      "newVibe": "NY VIBE",
+      "newVideoVibe": "NY VIDEO-VIBE",
+      "title": "Ser det bra ut?",
+      "imageAlt": "Din Vibe",
+      "captionPlaceholder": "Vad händer?",
+
+      "location": {
+        "title": "Endast ungefärligt område",
+        "description": "Endast stadsdel och stad visas. Din exakta plats förblir privat."
+      },
+
+      "interests": {
+        "title": "Lägg till intressen",
+        "description": "Välj befintliga intressen eller skapa ett nytt om det saknas.",
+        "addPlaceholder": "Lägg till ett annat intresse...",
+        "yourInterests": "Dina intressen",
+        "discoverMore": "Upptäck fler",
+        "maximum": "Du kan lägga till upp till {{count}} intressen på en Vibe."
+      },
+
+      "sharing": "Delar Vibe...",
+      "share": "Dela Vibe"
+    }
+  },
+
+  "friends": {
+    "eyebrow": "DINA PERSONER",
+    "title": "Vänner",
+    "description": "Personer du har fått kontakt med genom riktiga konversationer.",
+
+    "error": {
+      "title": "Kunde inte ladda dina vänner.",
+      "fallback": "Något gick fel när dina vänner skulle laddas."
+    },
+
+    "empty": {
+      "title": "Inga vänner ännu",
+      "description": "Fortsätt prata med personer du träffar genom Vibes. När en kontakt utvecklas naturligt kan möjligheten att bli vänner dyka upp."
+    },
+
+    "friendsSince": "Vänner sedan {{date}}"
+  },
+
+  "profile": {
+    "eyebrow": "DIN VIBE",
+    "title": "Profil",
+
+    "identity": {
+      "vibeUser": "Vibe-användare",
+      "addBio": "Berätta lite om dig själv.",
+      "memberSince": "Medlem sedan {{date}}",
+      "editTitle": "Redigera profil",
+      "editDescription": "Så här ser andra dig på VibeMoments.",
+      "displayName": "VISNINGSNAMN",
+      "username": "ANVÄNDARNAMN",
+      "usernameHint": "Endast bokstäver, siffror och understreck.",
+      "bio": "BIO",
+      "bioPlaceholder": "Berätta lite om dig själv...",
+      "save": "Spara profil",
+      "saving": "Sparar...",
+      "updated": "Profilen har uppdaterats."
+    },
+
+    "activity": {
+      "title": "Din aktivitet",
+      "activeVibes": "Aktiva Vibes",
+      "chats": "Chattar"
+    },
+
+    "distance": {
+      "title": "Vibe-avstånd",
+      "description": "Välj hur långt bort Vibes kan visas i ditt flöde.",
+      "value": "{{distance}} km",
+      "ownVibesNotice": "Dina egna aktiva Vibes visas alltid, även om de ligger utanför detta avstånd.",
+      "saving": "Sparar avstånd...",
+      "updated": "Vibe-avstånd uppdaterat till {{distance}} km.",
+      "updateError": "Det gick inte att uppdatera Vibe-avståndet."
+    },
+
+    "interests": {
+      "title": "Dina intressen",
+      "description": "Används för att hjälpa till att matcha dig med relevanta Vibes.",
+      "none": "Inga intressen valda ännu.",
+      "choose": "Välj intressen",
+      "discoverMore": "Upptäck fler",
+      "createPlaceholder": "Skapa ett intresse...",
+      "updated": "Intressena har uppdaterats.",
+      "createError": "Det gick inte att skapa det intresset.",
+      "updateError": "Det gick inte att uppdatera dina intressen."
+    },
+
+    "account": {
+      "title": "Konto",
+      "publicIdentity": "Offentlig identitet",
+      "publicIdentityDescription": "Din e-postadress visas aldrig på din offentliga profil.",
+      "logout": "Logga ut"
+    },
+
+    "updateError": "Det gick inte att uppdatera din profil."
+  },
+
+  "friendProfile": {
+    "eyebrow": "VÄNPROFIL",
+    "loading": "Laddar profil...",
+    "loadError": "Kunde inte ladda denna profil.",
+    "noBio": "Ingen bio ännu.",
+    "memberSince": "Medlem sedan {{date}}",
+    "friendsSince": "Vänner sedan {{date}}",
+
+    "sharedInterests": {
+      "title": "Gemensamma intressen",
+      "description": "Saker ni båda har valt som en del av er Vibe-identitet.",
+      "none": "Inga gemensamma intressen ännu."
+    },
+
+    "theirInterests": "Deras intressen",
+
+    "message": "Meddelande",
+    "removeFriend": "Ta bort vän",
+    "removeTitle": "Ta bort {{name}}?",
+    "removeDescription": "Ni kommer inte längre att vara vänner, men er befintliga konversation och meddelandehistorik finns kvar.",
+    "removing": "Tar bort...",
+    "removeError": "Det gick inte att ta bort den här vännen.",
+    "friendshipRemoveError": "Vänskapen kunde inte tas bort."
+  },
+
+  "errors": {
+    "profile": {
+      "displayNameTooShort": "Visningsnamnet måste innehålla minst 2 tecken.",
+      "displayNameTooLong": "Visningsnamnet får innehålla högst 40 tecken.",
+      "usernameTooShort": "Användarnamnet måste innehålla minst 3 tecken.",
+      "usernameTooLong": "Användarnamnet får innehålla högst 30 tecken.",
+      "usernameInvalid": "Användarnamnet får endast innehålla bokstäver, siffror och understreck.",
+      "bioTooLong": "Din bio får innehålla högst 160 tecken.",
+      "usernameTaken": "Det användarnamnet är redan upptaget.",
+      "invalidVibeDistance": "Ogiltigt Vibe-avstånd.",
+      "vibeDistanceRange": "Vibe-avståndet måste vara mellan 5 km och 25 km."
+    },
+
+    "interests": {
+      "invalidName": "Ogiltigt namn på intresse"
+    },
+
+    "camera": {
+      "captureSessionInvalid": "Fotograferingssessionen skapades inte korrekt.",
+      "prepareMode": "Det gick inte att förbereda det valda fotograferingsläget.",
+      "prepareCamera": "Det gick inte att förbereda kameran. Försök igen.",
+      "useCamera": "Det gick inte att använda kameran. Försök igen.",
+      "missingMediaFile": "Kameran returnerade ingen användbar mediefil.",
+      "missingFingerprint": "Kameran returnerade inget digitalt fingeravtryck för fotograferingen.",
+      "missingSessionId": "Kameran returnerade inget sessions-ID för fotograferingen.",
+      "missingNonce": "Kameran returnerade ingen nonce för fotograferingen.",
+      "sessionMismatch": "Fotograferingssessionen matchar inte den aktiva kamerasessionen.",
+      "nonceMismatch": "Fotograferingens nonce matchar inte den aktiva kamerasessionen.",
+      "missingDeviceId": "Kameran returnerade inget enhets-ID.",
+      "missingSignature": "Kameran returnerade ingen signatur.",
+      "missingProofVersion": "Kameran returnerade ingen version för fotograferingsbeviset.",
+      "missingSignatureAlgorithm": "Kameran returnerade ingen signaturalgoritm.",
+      "mediaTypeMismatch": "Den fotograferade medietypen \"{{type}}\" matchar inte det säkra fotograferingsläget \"{{mode}}\".",
+      "videoTooLong": "Videor får vara högst {{seconds}} sekunder långa.",
+      "unsupportedMediaType": "Medietypen stöds inte av kameran: {{type}}",
+      "processCapture": "Det gick inte att bearbeta det fotograferade materialet.",
+      "invalidVerificationData": "Fotograferingen innehåller inte giltiga verifieringsdata.",
+      "locationRequiredToPublish": "Platsbehörighet krävs för att publicera en Vibe.",
+      "publishError": "Det gick inte att publicera din Vibe. Försök igen."
+    },
+
+    "captureSecurity": {
+      "missingDeviceId": "VibeCamera returnerade inget enhets-ID.",
+      "missingPublicKey": "VibeCamera returnerade ingen offentlig nyckel för fotograferingen.",
+      "registrationFailed": "Fotograferingsenheten kunde inte registreras.",
+      "verificationFailed": "Fotograferingsbeviset kunde inte verifieras."
+    },
+
+    "media": {
+      "missingFile": "Ingen mediefil angavs.",
+      "maximumSize": "Vibe-media får vara högst 50 MB.",
+      "missingSecureProof": "Säkert fotograferingsbevis saknas.",
+      "proofVerificationFailed": "Verifieringen av fotograferingsbeviset misslyckades."
+    },
+
+    "gif": {
+      "conversationRequired": "En konversation krävs.",
+      "validGifRequired": "En giltig GIF krävs.",
+      "signInRequired": "Du måste vara inloggad för att skicka en GIF."
+    }
+  }
+}

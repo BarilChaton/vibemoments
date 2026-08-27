@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiClock, FiRefreshCw } from 'react-icons/fi'
 import { generateDisplayName } from '../../utils/generateDisplayName.js'
 import { saveDisplayName } from '../../services/onboarding.js'
@@ -7,6 +8,7 @@ import useAuthStore from '../../stores/useAuthStore.js'
 const MAX_HISTORY = 6
 
 const IdentityStep = ({ onNext }) => {
+  const { t } = useTranslation()
   const { user, setProfile } = useAuthStore()
 
   const [displayName, setDisplayName] = useState(() => generateDisplayName())
@@ -40,7 +42,7 @@ const IdentityStep = ({ onNext }) => {
     const name = displayName.trim()
 
     if (name.length < 3) {
-      setError('Your display name must contain at least 3 characters.')
+      setError(t('onboarding.identity.minimumLengthError'))
       return
     }
 
@@ -49,10 +51,12 @@ const IdentityStep = ({ onNext }) => {
 
     try {
       const profile = await saveDisplayName(user.id, name)
+
       setProfile(profile)
       onNext()
-    } catch (error) {
-      setError(error.message)
+    } catch (saveError) {
+      console.error('Failed to save display name:', saveError)
+      setError(t('onboarding.identity.saveError'))
     } finally {
       setLoading(false)
     }
@@ -61,18 +65,16 @@ const IdentityStep = ({ onNext }) => {
   return (
     <div className="flex flex-1 flex-col">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">Step 1 of 3</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">{t('onboarding.identity.step')}</p>
 
-        <h1 className="mt-3 text-3xl font-black text-vibe-text">Choose your Vibe identity</h1>
+        <h1 className="mt-3 text-3xl font-black text-vibe-text">{t('onboarding.identity.title')}</h1>
 
-        <p className="mt-3 leading-6 text-vibe-muted">
-          Other people nearby do not need to know your real name. Use the name we generated for you or create your own.
-        </p>
+        <p className="mt-3 leading-6 text-vibe-muted">{t('onboarding.identity.description')}</p>
       </div>
 
       <div className="mt-12">
         <label className="text-sm font-semibold text-vibe-muted" htmlFor="display-name">
-          Display name
+          {t('onboarding.identity.displayName')}
         </label>
 
         <input
@@ -93,14 +95,14 @@ const IdentityStep = ({ onNext }) => {
           type="button"
           onClick={generateAnother}>
           <FiRefreshCw />
-          Generate another
+          {t('onboarding.identity.generateAnother')}
         </button>
 
         {nameHistory.length > 0 && (
           <div className="mt-8">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-vibe-muted">
               <FiClock />
-              Previous names
+              {t('onboarding.identity.previousNames')}
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -117,9 +119,7 @@ const IdentityStep = ({ onNext }) => {
           </div>
         )}
 
-        <p className="mt-6 text-sm leading-6 text-vibe-muted">
-          This is the name people will see when you post or react to a <span className="font-semibold text-vibe-apricot-dark">Vibe</span>.
-        </p>
+        <p className="mt-6 text-sm leading-6 text-vibe-muted">{t('onboarding.identity.nameExplanation')}</p>
 
         {error && <p className="mt-4 text-sm font-medium text-red-500">{error}</p>}
       </div>
@@ -130,7 +130,7 @@ const IdentityStep = ({ onNext }) => {
           type="button"
           disabled={loading}
           onClick={handleContinue}>
-          {loading ? 'Saving...' : 'Continue'}
+          {loading ? t('onboarding.identity.saving') : t('common.continue')}
         </button>
       </div>
     </div>
