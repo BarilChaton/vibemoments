@@ -342,7 +342,7 @@ const VibeCard = ({ vibe, reactionActivity, onClick }) => {
     if (!video) return
 
     video.play().catch((error) => {
-      console.error('Feed video autoplay was prevented:', error)
+      console.debug('Feed video autoplay was prevented:', error)
     })
   }
 
