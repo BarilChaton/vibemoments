@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiMapPin, FiRefreshCw } from 'react-icons/fi'
 import { getNearbyVibes, getVibeMediaUrl } from '../services/vibes.js'
+import { useTranslation } from 'react-i18next'
 import useAuthStore from '../stores/useAuthStore.js'
 import useFeedReactionActivity from '../hooks/useFeedReactionActivity.js'
 import VibeCard from '../components/vibes/VibeCard.jsx'
@@ -35,6 +36,7 @@ const loadNearbyVibes = async (radiusMeters) => {
 
 const Home = ({ onOpenConversation }) => {
   const { profile } = useAuthStore()
+  const { t } = useTranslation()
 
   const vibeRadiusMeters = profile?.vibe_radius_meters || 5000
   const vibeRadiusKm = Math.round(vibeRadiusMeters / 1000)
@@ -60,12 +62,12 @@ const Home = ({ onOpenConversation }) => {
       <header className="px-6 pb-4 pt-5">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-sm font-semibold text-vibe-apricot-dark">RIGHT NOW</p>
-            <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Nearby Vibes</h1>
+            <p className="text-sm font-semibold text-vibe-apricot-dark">{t('home.eyebrow')}</p>
+            <h1 className="mt-1 text-3xl font-black text-vibe-petrol">{t('home.title')}</h1>
 
             <p className="mt-1 flex items-center gap-1 text-sm text-vibe-muted">
               <FiMapPin />
-              Within {vibeRadiusKm} km
+              {t('home.withinDistance', { distance: vibeRadiusKm })}
             </p>
           </div>
 
@@ -83,17 +85,15 @@ const Home = ({ onOpenConversation }) => {
         <div className="flex flex-1 items-center justify-center px-6">
           <div className="text-center">
             <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
-            <p className="mt-4 text-sm text-vibe-muted">Finding nearby Vibes...</p>
+            <p className="mt-4 text-sm text-vibe-muted">{t('home.finding')}</p>
           </div>
         </div>
       ) : error ? (
         <div className="flex flex-1 items-center justify-center px-6 text-center">
           <div>
-            <h2 className="text-lg font-bold text-vibe-text">Couldn't load nearby Vibes</h2>
+            <h2 className="text-lg font-bold text-vibe-text">{t('home.error.title')}</h2>
 
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-              {error.message || 'Something went wrong while loading nearby Vibes.'}
-            </p>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{error.message || `${t('home.error.fallback')}`}</p>
 
             <button
               className="mt-5 rounded-2xl bg-vibe-petrol px-5 py-3 text-sm font-bold text-vibe-surface active:scale-95"
@@ -108,10 +108,9 @@ const Home = ({ onOpenConversation }) => {
           <div>
             <div className="mx-auto mb-5 size-3 rounded-full bg-vibe-lime shadow-lg shadow-vibe-lime/30" />
 
-            <h2 className="text-xl font-bold text-vibe-text">Nothing nearby yet</h2>
-
+            <h2 className="text-xl font-bold text-vibe-text">{t('home.empty.title')}</h2>
             <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-              There aren't any active Vibes within {vibeRadiusKm} km. Be the first to share what's happening.
+              {t('home.empty.description', { distance: vibeRadiusKm })}
             </p>
           </div>
         </div>
