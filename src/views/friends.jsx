@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { FiMessageCircle, FiRefreshCw, FiUsers } from 'react-icons/fi'
 import { getFriends } from '../services/friends.js'
 import UserProfile from './UserProfile.jsx'
@@ -8,10 +9,10 @@ import UserProfile from './UserProfile.jsx'
 // Helpers
 // -----------------------------------------------------------------------------
 
-const formatFriendsSince = (createdAt) => {
+const formatFriendsSince = (createdAt, language) => {
   if (!createdAt) return ''
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(language, {
     month: 'short',
     year: 'numeric'
   }).format(new Date(createdAt))
@@ -22,6 +23,8 @@ const formatFriendsSince = (createdAt) => {
 // -----------------------------------------------------------------------------
 
 const Friends = ({ onOpenConversation }) => {
+  const { t, i18n } = useTranslation()
+
   const [selectedFriendId, setSelectedFriendId] = useState(null)
 
   const {
@@ -61,11 +64,11 @@ const Friends = ({ onOpenConversation }) => {
       <header className="shrink-0 px-6 pb-4 pt-5">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-vibe-apricot-dark">YOUR PEOPLE</p>
+            <p className="text-sm font-semibold text-vibe-apricot-dark">{t('friends.eyebrow')}</p>
 
-            <h1 className="mt-1 text-3xl font-black text-vibe-petrol">Friends</h1>
+            <h1 className="mt-1 text-3xl font-black text-vibe-petrol">{t('friends.title')}</h1>
 
-            <p className="mt-2 text-sm text-vibe-muted">People you've connected with through real conversations.</p>
+            <p className="mt-2 text-sm text-vibe-muted">{t('friends.description')}</p>
           </div>
 
           <button
@@ -90,17 +93,15 @@ const Friends = ({ onOpenConversation }) => {
         {/* Error */}
         {error && (
           <div className="py-14 text-center">
-            <p className="font-semibold text-vibe-text">Couldn't load your friends.</p>
+            <p className="font-semibold text-vibe-text">{t('friends.error.title')}</p>
 
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-              {error.message || 'Something went wrong while loading your friends.'}
-            </p>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{t('friends.error.fallback')}</p>
 
             <button
               className="mt-5 rounded-2xl bg-vibe-petrol px-5 py-3 text-sm font-bold text-vibe-surface active:scale-95"
               type="button"
               onClick={() => refetch()}>
-              Try again
+              {t('common.tryAgain')}
             </button>
           </div>
         )}
@@ -112,11 +113,9 @@ const Friends = ({ onOpenConversation }) => {
               <FiUsers />
             </div>
 
-            <p className="mt-5 text-lg font-bold text-vibe-petrol">No friends yet</p>
+            <p className="mt-5 text-lg font-bold text-vibe-petrol">{t('friends.empty.title')}</p>
 
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-              Keep talking with people you meet through Vibes. When a connection grows naturally, the option to become friends can appear.
-            </p>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{t('friends.empty.description')}</p>
           </div>
         )}
 
@@ -124,8 +123,10 @@ const Friends = ({ onOpenConversation }) => {
         {!isLoading && !error && friends.length > 0 && (
           <div className="space-y-3">
             {friends.map((friend) => {
-              const displayName = friend.display_name || friend.username || 'Vibe user'
+              const displayName = friend.display_name || friend.username || t('common.vibeUser')
               const initial = displayName.slice(0, 1).toUpperCase()
+
+              const friendsSince = formatFriendsSince(friend.friends_since, i18n.resolvedLanguage || i18n.language)
 
               return (
                 <div key={friend.friendship_id} className="flex items-center gap-3 rounded-3xl bg-vibe-surface p-4 shadow-sm">
@@ -150,7 +151,7 @@ const Friends = ({ onOpenConversation }) => {
 
                       {friend.username && <p className="mt-0.5 truncate text-xs font-medium text-vibe-muted">@{friend.username}</p>}
 
-                      <p className="mt-1 text-xs text-vibe-muted">Friends since {formatFriendsSince(friend.friends_since)}</p>
+                      <p className="mt-1 text-xs text-vibe-muted">{t('friends.friendsSince', { date: friendsSince })}</p>
                     </div>
                   </button>
 

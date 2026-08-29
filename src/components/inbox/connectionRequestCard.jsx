@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiArrowRight } from 'react-icons/fi'
 import { acceptConnectionRequest } from '../../services/connections.js'
 
 const ConnectionRequestCard = ({ request, onAccepted }) => {
+  const { t } = useTranslation()
+
   const [reply, setReply] = useState('')
   const [replying, setReplying] = useState(false)
   const [error, setError] = useState('')
@@ -24,7 +27,7 @@ const ConnectionRequestCard = ({ request, onAccepted }) => {
       onAccepted?.(conversationId)
     } catch (error) {
       console.error('Failed to accept connection request:', error)
-      setError(error.message || 'Could not send your reply.')
+      setError(t('connectionRequest.replyError'))
     } finally {
       setReplying(false)
     }
@@ -34,11 +37,14 @@ const ConnectionRequestCard = ({ request, onAccepted }) => {
     <div className="rounded-3xl bg-vibe-surface p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-bold text-vibe-petrol">{request.sender?.display_name || 'Someone nearby'}</p>
-          <p className="mt-1 text-xs text-vibe-muted">Reached out through your Vibe</p>
+          <p className="truncate font-bold text-vibe-petrol">{request.sender?.display_name || t('connectionRequest.someoneNearby')}</p>
+
+          <p className="mt-1 text-xs text-vibe-muted">{t('connectionRequest.subtitle')}</p>
         </div>
 
-        <span className="shrink-0 rounded-full bg-vibe-apricot/20 px-3 py-1 text-xs font-semibold text-vibe-apricot-dark">Pending</span>
+        <span className="shrink-0 rounded-full bg-vibe-apricot/20 px-3 py-1 text-xs font-semibold text-vibe-apricot-dark">
+          {t('connectionRequest.pending')}
+        </span>
       </div>
 
       <div className="mt-4 rounded-2xl border border-vibe-petrol/10 bg-vibe-bg p-4">
@@ -48,7 +54,7 @@ const ConnectionRequestCard = ({ request, onAccepted }) => {
       <div className="mt-4">
         <textarea
           className="min-h-24 w-full resize-none rounded-2xl border border-vibe-petrol/15 bg-vibe-bg px-4 py-3 text-sm text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-apricot"
-          placeholder="Reply to unlock chat..."
+          placeholder={t('connectionRequest.replyPlaceholder')}
           value={reply}
           maxLength={1000}
           disabled={replying}
@@ -65,7 +71,7 @@ const ConnectionRequestCard = ({ request, onAccepted }) => {
           type="button"
           disabled={!reply.trim() || replying}
           onClick={handleReply}>
-          {replying ? 'Replying...' : 'Reply & unlock chat'}
+          {replying ? t('connectionRequest.replying') : t('connectionRequest.replyAndUnlock')}
           {!replying && <FiArrowRight />}
         </button>
       </div>

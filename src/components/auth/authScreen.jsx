@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { signIn, signInWithGoogle, signUp } from '../../services/auth.js'
 import { FcGoogle } from 'react-icons/fc'
 
 const AuthScreen = () => {
+  const { t } = useTranslation()
+
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,7 +27,7 @@ const AuthScreen = () => {
         const data = await signUp(email, password)
 
         if (!data.session) {
-          setMessage('Check your email to confirm your account.')
+          setMessage(t('auth.register.confirmationEmail'))
         }
       } else {
         await signIn(email, password)
@@ -56,28 +59,29 @@ const AuthScreen = () => {
     <main className="flex min-h-dvh flex-col bg-vibe-bg px-6 pb-8 pt-[calc(env(safe-area-inset-top)+3rem)] text-vibe-text">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <header className="mb-12">
-          <h1 className="text-4xl font-black tracking-tight text-vibe-petrol">VibeMoments</h1>
-          <p className="mt-3 text-lg text-vibe-muted">See what's happening around you. Right now.</p>
+          <h1 className="text-4xl font-black tracking-tight text-vibe-petrol">{t('common.appName')}</h1>
+
+          <p className="mt-3 text-lg text-vibe-muted">{t('auth.tagline')}</p>
         </header>
 
         <div className="flex-1">
-          <h2 className="text-2xl font-bold text-vibe-text">{isRegister ? 'Create your account' : 'Welcome back'}</h2>
+          <h2 className="text-2xl font-bold text-vibe-text">{isRegister ? t('auth.register.title') : t('auth.login.title')}</h2>
 
-          <p className="mt-2 text-vibe-muted">
-            {isRegister ? 'Join the vibes happening around you.' : "Log in to see what's happening nearby."}
-          </p>
+          <p className="mt-2 text-vibe-muted">{isRegister ? t('auth.register.description') : t('auth.login.description')}</p>
 
           <button
             className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-vibe-petrol/10 bg-vibe-surface px-5 py-4 font-semibold text-vibe-text shadow-sm transition hover:border-vibe-petrol/25 active:scale-[0.98]"
             type="button"
             onClick={handleGoogle}>
             <FcGoogle className="text-xl" />
-            Continue with Google
+            {t('auth.google')}
           </button>
 
           <div className="my-6 flex items-center gap-4">
             <div className="h-px flex-1 bg-vibe-petrol/15" />
-            <span className="text-sm text-vibe-muted/70">or</span>
+
+            <span className="text-sm text-vibe-muted/70">{t('auth.or')}</span>
+
             <div className="h-px flex-1 bg-vibe-petrol/15" />
           </div>
 
@@ -85,7 +89,7 @@ const AuthScreen = () => {
             <input
               className="w-full rounded-2xl border border-vibe-petrol/15 bg-vibe-surface px-5 py-4 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-petrol focus:ring-2 focus:ring-vibe-petrol/10"
               type="email"
-              placeholder="Email"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -95,7 +99,7 @@ const AuthScreen = () => {
             <input
               className="w-full rounded-2xl border border-vibe-petrol/15 bg-vibe-surface px-5 py-4 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-petrol focus:ring-2 focus:ring-vibe-petrol/10"
               type="password"
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={isRegister ? 'new-password' : 'current-password'}
@@ -104,22 +108,23 @@ const AuthScreen = () => {
             />
 
             {error && <p className="text-sm font-medium text-red-500">{error}</p>}
+
             {message && <p className="text-sm font-medium text-vibe-petrol">{message}</p>}
 
             <button
               className="w-full rounded-2xl bg-vibe-petrol px-5 py-4 font-bold text-vibe-surface shadow-lg shadow-vibe-petrol/15 transition hover:bg-vibe-petrol-light active:scale-[0.98] disabled:opacity-50"
               type="submit"
               disabled={loading}>
-              {loading ? 'Please wait...' : isRegister ? 'Create account' : 'Log in'}
+              {loading ? t('auth.pleaseWait') : isRegister ? t('auth.register.button') : t('auth.login.button')}
             </button>
           </form>
         </div>
 
         <div className="pt-8 text-center text-sm text-vibe-muted">
-          {isRegister ? 'Already have an account?' : 'New to VibeMoments?'}
+          {isRegister ? t('auth.register.existingUser') : t('auth.login.newUser')}
 
           <button className="ml-2 font-semibold text-vibe-apricot transition active:opacity-60" type="button" onClick={switchMode}>
-            {isRegister ? 'Log in' : 'Create account'}
+            {isRegister ? t('auth.login.button') : t('auth.register.button')}
           </button>
         </div>
       </div>

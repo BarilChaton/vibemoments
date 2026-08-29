@@ -15,6 +15,7 @@ import {
   MAX_VIDEO_DURATION,
   VIDEO_DURATION_TOLERANCE
 } from '../utils/vibeMedia.js'
+import { useTranslation } from 'react-i18next'
 import useAuthStore from '../stores/useAuthStore.js'
 import VibeCameraScreen from '../components/createVibe/vibeCameraScreen.jsx'
 import VibeCaptureScreen from '../components/createVibe/vibeCaptureScreen.jsx'
@@ -24,6 +25,7 @@ const MAX_INTERESTS = 5
 
 const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   const { user } = useAuthStore()
+  const { t } = useTranslation()
 
   const [cameraOpen, setCameraOpen] = useState(false)
   const [captureSession, setCaptureSession] = useState(null)
@@ -91,7 +93,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     }
 
     if (!data?.captureSessionId || !data?.nonce) {
-      throw new Error('Capture session was not created correctly.')
+      throw new Error(t('errors.camera.captureSessionInvalid'))
     }
 
     return data
@@ -120,7 +122,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       console.error('Failed to change secure capture mode:', sessionError)
 
       setCaptureSession(null)
-      setError(sessionError?.message || 'Could not prepare the selected capture mode.')
+      setError(t('errors.camera.prepareMode'))
     } finally {
       setCaptureSessionUpdating(false)
     }
@@ -140,8 +142,11 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
     try {
       const { identity } = await registerCaptureDevice()
+
       setCaptureDeviceId(identity.deviceId)
+
       const session = await createCaptureSession(mediaType, identity.deviceId)
+
       setCaptureSession(session)
       setCaptureMode(mediaType)
       setCameraOpen(true)
@@ -150,7 +155,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
       setCaptureSession(null)
       setCaptureDeviceId(null)
-      setError(captureError?.message || 'Could not prepare the camera. Please try again.')
+      setError(t('errors.camera.prepareCamera'))
     } finally {
       setOpeningCamera(false)
     }
@@ -167,7 +172,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   const handleCameraError = (cameraError) => {
     console.error('VibeCamera error:', cameraError)
 
-    setError(cameraError?.message || 'Could not use the camera. Please try again.')
+    setError(t('errors.camera.useCamera'))
   }
 
   const handleCameraCapture = async (capture) => {
@@ -175,47 +180,52 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
     try {
       if (!capture?.path) {
-        throw new Error('The camera did not return a usable media file.')
+        throw new Error(t('errors.camera.missingMediaFile'))
       }
 
       if (!capture?.sha256) {
-        throw new Error('The camera did not return a capture fingerprint.')
+        throw new Error(t('errors.camera.missingFingerprint'))
       }
 
       if (!capture?.captureSessionId) {
-        throw new Error('The camera did not return a capture session ID.')
+        throw new Error(t('errors.camera.missingSessionId'))
       }
 
       if (!capture?.nonce) {
-        throw new Error('The camera did not return a capture nonce.')
+        throw new Error(t('errors.camera.missingNonce'))
       }
 
       if (capture.captureSessionId !== captureSession?.captureSessionId) {
-        throw new Error('Capture session does not match the active camera session.')
+        throw new Error(t('errors.camera.sessionMismatch'))
       }
 
       if (capture.nonce !== captureSession?.nonce) {
-        throw new Error('Capture nonce does not match the active camera session.')
+        throw new Error(t('errors.camera.nonceMismatch'))
       }
 
       if (!capture?.deviceId) {
-        throw new Error('The camera did not return a capture device ID.')
+        throw new Error(t('errors.camera.missingDeviceId'))
       }
 
       if (!capture?.captureSignature) {
-        throw new Error('The camera did not return a capture signature.')
+        throw new Error(t('errors.camera.missingSignature'))
       }
 
       if (!capture?.proofVersion) {
-        throw new Error('The camera did not return a capture proof version.')
+        throw new Error(t('errors.camera.missingProofVersion'))
       }
 
       if (!capture?.signatureAlgorithm) {
-        throw new Error('The camera did not return a signature algorithm.')
+        throw new Error(t('errors.camera.missingSignatureAlgorithm'))
       }
 
       if (capture.type !== captureMode) {
-        throw new Error(`Captured media type "${capture.type}" does not match secure capture mode "${captureMode}".`)
+        throw new Error(
+          t('errors.camera.mediaTypeMismatch', {
+            type: capture.type,
+            mode: captureMode
+          })
+        )
       }
 
       const webPath = Capacitor.convertFileSrc(capture.path)
@@ -255,7 +265,11 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         }
 
         if (duration > MAX_VIDEO_DURATION + VIDEO_DURATION_TOLERANCE) {
-          throw new Error(`Videos can be a maximum of ${MAX_VIDEO_DURATION} seconds.`)
+          throw new Error(
+            t('errors.camera.videoTooLong', {
+              seconds: MAX_VIDEO_DURATION
+            })
+          )
         }
 
         const thumbnailFile = await createVideoThumbnail(webPath)
@@ -294,7 +308,11 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         return
       }
 
-      throw new Error(`Unsupported camera media type: ${capture.type}`)
+      throw new Error(
+        t('errors.camera.unsupportedMediaType', {
+          type: capture.type
+        })
+      )
     } catch (captureError) {
       console.error('Failed to process camera capture:', captureError)
 
@@ -309,7 +327,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       setCaptureSession(null)
       setCaptureDeviceId(null)
       setCaptureSessionUpdating(false)
-      setError(captureError?.message || 'Could not process the captured media.')
+      setError(captureError?.message || t('errors.camera.processCapture'))
     }
   }
 
@@ -371,7 +389,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
       setCustomInterest('')
     } catch (interestError) {
-      setError(interestError.message)
+      console.error('Failed to create interest:', interestError)
+
+      setError(t('errors.interests.createError'))
     } finally {
       setCreatingInterest(false)
     }
@@ -411,14 +431,18 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         !media.proofVersion ||
         !media.signatureAlgorithm
       ) {
-        throw new Error('This capture does not contain valid capture verification data.')
+        throw new Error(t('errors.camera.invalidVerificationData'))
       }
 
       if (media.type === 'video') {
         const duration = media.duration || (await getVideoDuration(media.webPath))
 
         if (duration > MAX_VIDEO_DURATION + VIDEO_DURATION_TOLERANCE) {
-          throw new Error(`Videos can be a maximum of ${MAX_VIDEO_DURATION} seconds.`)
+          throw new Error(
+            t('errors.camera.videoTooLong', {
+              seconds: MAX_VIDEO_DURATION
+            })
+          )
         }
       }
 
@@ -431,7 +455,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
         const requested = await Geolocation.requestPermissions()
 
         if (requested.location !== 'granted' && requested.coarseLocation !== 'granted') {
-          throw new Error('Location permission is required to publish a Vibe.')
+          throw new Error(t('errors.camera.locationRequiredToPublish'))
         }
       }
 
@@ -502,7 +526,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     } catch (publishError) {
       console.error('Failed to publish Vibe:', publishError)
 
-      setError(publishError?.message || 'Could not publish your Vibe. Please try again.')
+      setError(publishError?.message || t('errors.camera.publishError'))
     } finally {
       setPublishing(false)
     }

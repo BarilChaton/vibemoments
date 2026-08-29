@@ -1,0 +1,450 @@
+{
+  "common": {
+    "appName": "VibeMoments",
+    "back": "Back",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving...",
+    "sending": "Sending...",
+    "tryAgain": "Try again",
+    "profile": "Profile",
+    "conversation": "Conversation",
+    "friends": "Friends",
+    "vibeUser": "Vibe user",
+    "conversationFallback": "Conversation",
+    "someone": "Someone",
+    "someoneNearby": "Someone nearby",
+    "thisPerson": "This person",
+    "nearby": "Nearby",
+    "notAuthenticated": "Not authenticated"
+  },
+
+  "navigation": {
+    "vibes": "Vibes",
+    "friends": "Friends",
+    "create": "Create",
+    "inbox": "Inbox",
+    "profile": "Profile"
+  },
+
+  "auth": {
+    "tagline": "See what's happening around you. Right now.",
+
+    "login": {
+      "title": "Welcome back",
+      "description": "Log in to see what's happening nearby.",
+      "button": "Log in",
+      "newUser": "New to VibeMoments?"
+    },
+
+    "register": {
+      "title": "Create your account",
+      "description": "Join the vibes happening around you.",
+      "button": "Create account",
+      "existingUser": "Already have an account?",
+      "confirmationEmail": "Check your email to confirm your account."
+    },
+
+    "google": "Continue with Google",
+    "or": "or",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "pleaseWait": "Please wait..."
+  },
+
+  "onboarding": {
+    "identity": {
+      "step": "Step 1 of 3",
+      "title": "Choose your Vibe identity",
+      "description": "Other people nearby do not need to know your real name. Use the name we generated for you or create your own.",
+      "displayName": "Display name",
+      "generateAnother": "Generate another",
+      "previousNames": "Previous names",
+      "nameExplanation": "This is the name people will see when you post or react to a Vibe.",
+      "minimumLengthError": "Your display name must contain at least 3 characters.",
+      "saving": "Saving..."
+    },
+
+    "interests": {
+      "step": "Step 2 of 3",
+      "title": "What's your vibe?",
+      "description": "Choose at least {{count}} things you're into. Can't find something? Add your own.",
+      "addPlaceholder": "Add an interest...",
+      "loading": "Loading interests...",
+      "showDifferent": "Show different interests",
+      "selected": "{{count}} selected",
+      "moreNeeded": "{{count}} more needed",
+      "saving": "Saving..."
+    },
+
+    "location": {
+      "step": "Step 3 of 3",
+      "title": "See what’s happening around you",
+      "description": "VibeMoments uses your location to find Vibes happening nearby and to understand which moments are relevant to you.",
+      "privacyTitle": "Your location stays private",
+      "privacyDescription": "Other users will not see your live GPS position. Location is used to discover nearby Vibes and to attach approximate location information to moments you post.",
+      "usesTitle": "What we use it for",
+      "uses": {
+        "findNearby": "Find Vibes within your local area",
+        "distance": "Calculate approximate distance",
+        "ranking": "Help rank nearby moments"
+      },
+      "permissionRequired": "Location permission is required to discover nearby Vibes.",
+      "requesting": "Requesting location...",
+      "enable": "Enable location"
+    }
+  },
+
+  "home": {
+    "eyebrow": "RIGHT NOW",
+    "title": "Nearby Vibes",
+    "withinDistance": "Within {{distance}} km",
+    "finding": "Finding nearby Vibes...",
+
+    "error": {
+      "title": "Couldn't load nearby Vibes",
+      "fallback": "Something went wrong while loading nearby Vibes."
+    },
+
+    "empty": {
+      "title": "Nothing nearby yet",
+      "description": "There aren't any active Vibes within {{distance}} km. Be the first to share what's happening."
+    }
+  },
+
+  "vibe": {
+    "locationFallback": "Nearby",
+
+    "time": {
+      "now": "Now",
+      "justNow": "Just now",
+      "minutesShort": "{{count}}m",
+      "hoursShort": "{{count}}h",
+      "daysShort": "{{count}}d",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    },
+
+    "viewer": {
+      "loading": "Loading Vibe...",
+      "loadError": "Couldn't load this Vibe.",
+      "live": "LIVE"
+    },
+
+    "connection": {
+      "connect": "Connect →",
+      "openChat": "Open chat →",
+      "requestSent": "Request sent",
+      "requestExpired": "Request expired",
+      "requestDeclined": "Request declined",
+      "connectedSwipe": "Connected · Swipe right to chat",
+
+      "composer": {
+        "eyebrow": "Connect through this Vibe",
+        "title": "Say something to {{name}}",
+        "oneMessageTitle": "You get one message.",
+        "oneMessageDescription": "If they reply within one hour, conversation unlocks. If they don't, this request expires and you can't contact them again through this Vibe.",
+        "placeholder": "Write your message...",
+        "send": "Send your one message",
+        "sending": "Sending...",
+        "alreadyUsed": "You've already used your connection request for this Vibe.",
+        "sendError": "Could not send your message."
+      }
+    }
+  },
+
+  "inbox": {
+    "eyebrow": "CONNECTIONS",
+    "title": "Inbox",
+    "description": "Requests and conversations started through nearby Vibes.",
+
+    "tabs": {
+      "requests": "Requests",
+      "chats": "Chats"
+    },
+
+    "requests": {
+      "loadError": "Could not load your requests.",
+      "emptyTitle": "No requests right now",
+      "emptyDescription": "If someone swipes right on one of your Vibes and sends a message, it will appear here."
+    },
+
+    "chats": {
+      "loadError": "Could not load your conversations.",
+      "emptyTitle": "No conversations yet",
+      "emptyDescription": "Conversations appear here after a Vibe creator replies to a connection request.",
+      "sentGif": "Sent a GIF",
+      "unlocked": "Chat unlocked through a Vibe"
+    }
+  },
+
+  "connectionRequest": {
+    "someoneNearby": "Someone nearby",
+    "subtitle": "Reached out through your Vibe",
+    "pending": "Pending",
+    "replyPlaceholder": "Reply to unlock chat...",
+    "replying": "Replying...",
+    "replyAndUnlock": "Reply & unlock chat",
+    "replyError": "Could not send your reply."
+  },
+
+  "conversation": {
+    "connectedThroughVibe": "Connected through a Vibe",
+    "friends": "Friends",
+
+    "friendship": {
+      "addFriend": "Add friend",
+      "sending": "Sending...",
+      "requestSent": "Request sent",
+      "requestTitle": "Friend request",
+      "requestDescription": "{{name}} would like to add you as a friend.",
+      "decline": "Decline",
+      "accept": "Accept",
+      "sendError": "Could not send friend request.",
+      "respondError": "Could not update friend request."
+    },
+
+    "messages": {
+      "placeholder": "Message...",
+      "loadError": "Could not load messages.",
+      "emptyTitle": "Conversation unlocked",
+      "emptyDescription": "You connected through a Vibe. Messages between you will appear here.",
+      "sendError": "Could not send your message.",
+      "gifSendError": "Could not send the GIF."
+    },
+
+    "typing": "{{name}} is typing...",
+
+    "loading": "Loading conversation...",
+    "loadError": "Couldn't load this conversation.",
+
+    "gifPicker": {
+      "searchPlaceholder": "Search KLIPY",
+      "loadError": "Couldn't load GIFs.",
+      "loadErrorFallback": "Could not load GIFs.",
+      "empty": "No GIFs found.",
+      "noMore": "No more GIFs",
+      "poweredBy": "Powered by KLIPY",
+      "imageAlt": "GIF"
+    }
+  },
+
+  "createVibe": {
+    "capture": {
+      "eyebrow": "CAPTURE THE MOMENT",
+      "title": "Create a Vibe",
+      "description": "Share what's happening around you right now.",
+      "openCamera": "Open Camera",
+      "cameraDescription": "Take a photo or record a video",
+      "photo": "Photo",
+      "videoMaximum": "Up to {{seconds}} seconds",
+      "explanation": "Capture what's happening around you right now and share it with nearby people."
+    },
+
+    "camera": {
+      "preparingSecureCapture": "Preparing secure capture..."
+    },
+
+    "composer": {
+      "newVibe": "NEW VIBE",
+      "newVideoVibe": "NEW VIDEO VIBE",
+      "title": "Looking good?",
+      "imageAlt": "Your Vibe",
+      "captionPlaceholder": "What's happening?",
+
+      "location": {
+        "title": "General area only",
+        "description": "Only the district and city are shown. Your exact location remains private."
+      },
+
+      "interests": {
+        "title": "Add interests",
+        "description": "Choose existing interests or create one if it's missing.",
+        "addPlaceholder": "Add another interest...",
+        "yourInterests": "Your interests",
+        "discoverMore": "Discover more",
+        "maximum": "You can attach up to {{count}} interests to a Vibe."
+      },
+
+      "sharing": "Sharing Vibe...",
+      "share": "Share Vibe"
+    }
+  },
+
+  "friends": {
+    "eyebrow": "YOUR PEOPLE",
+    "title": "Friends",
+    "description": "People you've connected with through real conversations.",
+
+    "error": {
+      "title": "Couldn't load your friends.",
+      "fallback": "Something went wrong while loading your friends."
+    },
+
+    "empty": {
+      "title": "No friends yet",
+      "description": "Keep talking with people you meet through Vibes. When a connection grows naturally, the option to become friends can appear."
+    },
+
+    "friendsSince": "Friends since {{date}}"
+  },
+
+  "profile": {
+    "eyebrow": "YOUR VIBE",
+    "title": "Profile",
+
+    "identity": {
+      "vibeUser": "Vibe user",
+      "addBio": "Add a little about yourself.",
+      "memberSince": "Member since {{date}}",
+      "editTitle": "Edit profile",
+      "editDescription": "This is how people see you around VibeMoments.",
+      "displayName": "DISPLAY NAME",
+      "username": "USERNAME",
+      "usernameHint": "Letters, numbers and underscores only.",
+      "bio": "BIO",
+      "bioPlaceholder": "Tell people a little about yourself...",
+      "save": "Save profile",
+      "saving": "Saving...",
+      "updated": "Profile updated."
+    },
+
+    "activity": {
+      "title": "Your activity",
+      "activeVibes": "Active Vibes",
+      "chats": "Chats"
+    },
+
+    "distance": {
+      "title": "Vibe distance",
+      "description": "Choose how far away Vibes can appear in your feed.",
+      "value": "{{distance}} km",
+      "ownVibesNotice": "Your own active Vibes are always shown, even if they are outside this distance.",
+      "saving": "Saving distance...",
+      "updated": "Vibe distance updated to {{distance}} km.",
+      "updateError": "Could not update Vibe distance."
+    },
+
+    "interests": {
+      "title": "Your interests",
+      "description": "Used to help match you with relevant Vibes.",
+      "none": "No interests selected yet.",
+      "choose": "Choose interests",
+      "discoverMore": "Discover more",
+      "createPlaceholder": "Create an interest...",
+      "updated": "Interests updated.",
+      "createError": "Could not create that interest.",
+      "updateError": "Could not update your interests."
+    },
+
+    "account": {
+      "title": "Account",
+      "publicIdentity": "Public identity",
+      "publicIdentityDescription": "Your email is never shown on your public profile.",
+      "logout": "Log out"
+    },
+
+    "updateError": "Could not update your profile."
+  },
+
+  "friendProfile": {
+    "eyebrow": "FRIEND PROFILE",
+    "loading": "Loading profile...",
+    "loadError": "Couldn't load this profile.",
+    "noBio": "No bio yet.",
+    "memberSince": "Member since {{date}}",
+    "friendsSince": "Friends since {{date}}",
+
+    "sharedInterests": {
+      "title": "Shared interests",
+      "description": "Things you both chose as part of your Vibe identity.",
+      "none": "No shared interests yet."
+    },
+
+    "theirInterests": "Their interests",
+
+    "message": "Message",
+    "removeFriend": "Remove friend",
+    "removeTitle": "Remove {{name}}?",
+    "removeDescription": "You'll no longer be friends, but your existing conversation and message history will stay intact.",
+    "removing": "Removing...",
+    "removeError": "Could not remove this friend.",
+    "friendshipRemoveError": "Friendship could not be removed."
+  },
+
+  "errors": {
+    "profile": {
+      "displayNameTooShort": "Display name must be at least 2 characters.",
+      "displayNameTooLong": "Display name must be 40 characters or fewer.",
+      "usernameTooShort": "Username must be at least 3 characters.",
+      "usernameTooLong": "Username must be 30 characters or fewer.",
+      "usernameInvalid": "Username can only contain letters, numbers and underscores.",
+      "bioTooLong": "Bio must be 160 characters or fewer.",
+      "usernameTaken": "That username is already taken.",
+      "invalidVibeDistance": "Invalid Vibe distance.",
+      "vibeDistanceRange": "Vibe distance must be between 5 km and 25 km."
+    },
+
+    "interests": {
+      "invalidName": "Invalid interest name"
+    },
+
+    "camera": {
+      "captureSessionInvalid": "Capture session was not created correctly.",
+      "prepareMode": "Could not prepare the selected capture mode.",
+      "prepareCamera": "Could not prepare the camera. Please try again.",
+      "useCamera": "Could not use the camera. Please try again.",
+      "missingMediaFile": "The camera did not return a usable media file.",
+      "missingFingerprint": "The camera did not return a capture fingerprint.",
+      "missingSessionId": "The camera did not return a capture session ID.",
+      "missingNonce": "The camera did not return a capture nonce.",
+      "sessionMismatch": "Capture session does not match the active camera session.",
+      "nonceMismatch": "Capture nonce does not match the active camera session.",
+      "missingDeviceId": "The camera did not return a capture device ID.",
+      "missingSignature": "The camera did not return a capture signature.",
+      "missingProofVersion": "The camera did not return a capture proof version.",
+      "missingSignatureAlgorithm": "The camera did not return a signature algorithm.",
+      "mediaTypeMismatch": "Captured media type \"{{type}}\" does not match secure capture mode \"{{mode}}\".",
+      "videoTooLong": "Videos can be a maximum of {{seconds}} seconds.",
+      "unsupportedMediaType": "Unsupported camera media type: {{type}}",
+      "processCapture": "Could not process the captured media.",
+      "invalidVerificationData": "This capture does not contain valid capture verification data.",
+      "locationRequiredToPublish": "Location permission is required to publish a Vibe.",
+      "publishError": "Could not publish your Vibe. Please try again."
+    },
+
+    "captureSecurity": {
+      "missingDeviceId": "VibeCamera did not return a device ID.",
+      "missingPublicKey": "VibeCamera did not return a capture public key.",
+      "registrationFailed": "Capture device could not be registered.",
+      "verificationFailed": "Capture proof could not be verified."
+    },
+
+    "media": {
+      "missingFile": "No media file provided.",
+      "maximumSize": "Vibe media can be a maximum of 50 MB.",
+      "missingSecureProof": "Missing secure capture proof.",
+      "proofVerificationFailed": "Capture proof verification failed."
+    },
+
+    "gif": {
+      "conversationRequired": "Conversation is required.",
+      "validGifRequired": "A valid GIF is required.",
+      "signInRequired": "You must be signed in to send a GIF."
+    }
+  },
+
+  "settings": {
+    "eyebrow": "SETTINGS",
+    "title": "Settings",
+    "language": {
+      "title": "Language",
+      "description": "Choose which language VibeMoments uses.",
+      "system": "System default",
+      "current": "Currently: {{language}}"
+    }
+  }
+}

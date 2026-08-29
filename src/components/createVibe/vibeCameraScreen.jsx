@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { VibeCamera, Camera } from '@barilchaton/vibemoments-camera'
 
 const VibeCameraScreen = ({ error, captureSession, captureSessionUpdating, initialMode, onModeChange, onCapture, onError, onClose }) => {
+  const { t } = useTranslation()
+
   const pinchStartDistanceRef = useRef(null)
   const pinchStartZoomRef = useRef(1)
   const lastAppliedZoomRef = useRef(1)
@@ -130,7 +133,7 @@ const VibeCameraScreen = ({ error, captureSession, captureSessionUpdating, initi
       {captureSessionUpdating && (
         <div className="pointer-events-none absolute inset-x-0 top-32 z-30 flex justify-center px-4">
           <div className="rounded-full bg-black/65 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md">
-            Preparing secure capture...
+            {t('createVibe.camera.preparingSecureCapture')}
           </div>
         </div>
       )}

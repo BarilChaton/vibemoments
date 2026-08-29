@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiArrowLeft, FiPlus } from 'react-icons/fi'
 import { getRandomInterests, saveUserInterests } from '../../services/onboarding.js'
 import { createInterest } from '../../services/interests.js'
@@ -7,6 +8,7 @@ import useAuthStore from '../../stores/useAuthStore.js'
 const MIN_INTERESTS = 3
 
 const InterestsStep = ({ onBack, onNext }) => {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
 
   const [interests, setInterests] = useState([])
@@ -22,15 +24,16 @@ const InterestsStep = ({ onBack, onNext }) => {
       try {
         const data = await getRandomInterests()
         setInterests(data)
-      } catch (error) {
-        setError(error.message)
+      } catch (loadError) {
+        console.error('Failed to load onboarding interests:', loadError)
+        setError(t('onboarding.interests.loadError'))
       } finally {
         setLoading(false)
       }
     }
 
     loadInterests()
-  }, [])
+  }, [t])
 
   const refreshInterests = async () => {
     setLoading(true)
@@ -45,8 +48,9 @@ const InterestsStep = ({ onBack, onNext }) => {
 
         return [...selectedInterests, ...newInterests].slice(0, 15)
       })
-    } catch (error) {
-      setError(error.message)
+    } catch (refreshError) {
+      console.error('Failed to refresh onboarding interests:', refreshError)
+      setError(t('onboarding.interests.loadError'))
     } finally {
       setLoading(false)
     }
@@ -76,8 +80,9 @@ const InterestsStep = ({ onBack, onNext }) => {
 
       setSelected((current) => (current.includes(interest.id) ? current : [...current, interest.id]))
       setCustomInterest('')
-    } catch (error) {
-      setError(error.message)
+    } catch (createError) {
+      console.error('Failed to create onboarding interest:', createError)
+      setError(t('onboarding.interests.createError'))
     } finally {
       setCreating(false)
     }
@@ -92,8 +97,9 @@ const InterestsStep = ({ onBack, onNext }) => {
     try {
       await saveUserInterests(user.id, selected)
       onNext()
-    } catch (error) {
-      setError(error.message)
+    } catch (saveError) {
+      console.error('Failed to save onboarding interests:', saveError)
+      setError(t('onboarding.interests.saveError'))
     } finally {
       setSaving(false)
     }
@@ -106,24 +112,22 @@ const InterestsStep = ({ onBack, onNext }) => {
         type="button"
         onClick={onBack}>
         <FiArrowLeft />
-        Back
+        {t('common.back')}
       </button>
 
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">Step 2 of 3</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">{t('onboarding.interests.step')}</p>
 
-        <h1 className="mt-3 text-3xl font-black text-vibe-text">What's your vibe?</h1>
+        <h1 className="mt-3 text-3xl font-black text-vibe-text">{t('onboarding.interests.title')}</h1>
 
-        <p className="mt-3 leading-6 text-vibe-muted">
-          Choose at least {MIN_INTERESTS} things you're into. Can't find something? Add your own.
-        </p>
+        <p className="mt-3 leading-6 text-vibe-muted">{t('onboarding.interests.description', { count: MIN_INTERESTS })}</p>
       </div>
 
       <div className="mt-8 flex gap-2">
         <input
           className="min-w-0 flex-1 rounded-2xl border border-vibe-petrol/15 bg-vibe-surface px-4 py-3 text-vibe-text outline-none transition placeholder:text-vibe-muted/50 focus:border-vibe-apricot focus:ring-2 focus:ring-vibe-apricot/15"
           type="text"
-          placeholder="Add an interest..."
+          placeholder={t('onboarding.interests.addPlaceholder')}
           value={customInterest}
           maxLength={40}
           onChange={(e) => {
@@ -146,7 +150,7 @@ const InterestsStep = ({ onBack, onNext }) => {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-sm text-vibe-muted">Loading interests...</p>
+          <p className="text-sm text-vibe-muted">{t('onboarding.interests.loading')}</p>
         </div>
       ) : (
         <>
@@ -175,7 +179,7 @@ const InterestsStep = ({ onBack, onNext }) => {
             type="button"
             disabled={loading}
             onClick={refreshInterests}>
-            Show different interests
+            {t('onboarding.interests.showDifferent')}
           </button>
         </>
       )}
@@ -184,9 +188,18 @@ const InterestsStep = ({ onBack, onNext }) => {
 
       <div className="mt-auto pt-8">
         <p className="mb-3 text-center text-sm text-vibe-muted">
-          <span className={selected.length >= MIN_INTERESTS ? 'font-semibold text-vibe-petrol' : ''}>{selected.length} selected</span>
+          <span className={selected.length >= MIN_INTERESTS ? 'font-semibold text-vibe-petrol' : ''}>
+            {t('onboarding.interests.selected', { count: selected.length })}
+          </span>
 
-          {selected.length < MIN_INTERESTS && ` · ${MIN_INTERESTS - selected.length} more needed`}
+          {selected.length < MIN_INTERESTS && (
+            <>
+              {' · '}
+              {t('onboarding.interests.moreNeeded', {
+                count: MIN_INTERESTS - selected.length
+              })}
+            </>
+          )}
         </p>
 
         <button
@@ -194,7 +207,7 @@ const InterestsStep = ({ onBack, onNext }) => {
           type="button"
           disabled={selected.length < MIN_INTERESTS || saving || loading}
           onClick={handleContinue}>
-          {saving ? 'Saving...' : 'Continue'}
+          {saving ? t('onboarding.interests.saving') : t('common.continue')}
         </button>
       </div>
     </div>

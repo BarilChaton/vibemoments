@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiMapPin } from 'react-icons/fi'
 import { getVibeMediaUrl } from '../../services/vibes.js'
 import { formatVibeLocation } from '../../utils/formatVibeLocation.js'
@@ -62,20 +63,26 @@ const createMagicParticles = (count = 48) => {
 
 const MAGIC_PARTICLES = createMagicParticles()
 
-const formatAge = (createdAt) => {
+const formatAge = (createdAt, t) => {
   const seconds = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
 
-  if (seconds < 60) return 'Now'
+  if (seconds < 60) return t('vibe.time.now')
 
   const minutes = Math.floor(seconds / 60)
 
-  if (minutes < 60) return `${minutes}m`
+  if (minutes < 60) {
+    return t('vibe.time.minutesShort', { count: minutes })
+  }
 
   const hours = Math.floor(minutes / 60)
 
-  if (hours < 24) return `${hours}h`
+  if (hours < 24) {
+    return t('vibe.time.hoursShort', { count: hours })
+  }
 
-  return `${Math.floor(hours / 24)}d`
+  return t('vibe.time.daysShort', {
+    count: Math.floor(hours / 24)
+  })
 }
 
 // -----------------------------------------------------------------------------
@@ -293,6 +300,8 @@ const ReactionMagic = ({ intensity }) => {
 // -----------------------------------------------------------------------------
 
 const VibeCard = ({ vibe, reactionActivity, onClick }) => {
+  const { t } = useTranslation()
+
   const videoRef = useRef(null)
   const cardRef = useRef(null)
 
@@ -448,9 +457,12 @@ const VibeCard = ({ vibe, reactionActivity, onClick }) => {
 
           <div className="mt-1 flex items-center gap-1 text-[11px] text-white/80">
             <FiMapPin />
-            <span className="truncate">{formatVibeLocation(vibe)}</span>
+
+            <span className="truncate">{formatVibeLocation(vibe, t('vibe.locationFallback'))}</span>
+
             <span>·</span>
-            <span className="shrink-0">{formatAge(vibe.created_at)}</span>
+
+            <span className="shrink-0">{formatAge(vibe.created_at, t)}</span>
           </div>
 
           {vibe.caption && <p className="mt-1 truncate text-xs text-white/90">{vibe.caption}</p>}

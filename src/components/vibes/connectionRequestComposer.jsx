@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiX } from 'react-icons/fi'
 import { createConnectionRequest } from '../../services/connections.js'
 
 const MAX_MESSAGE_LENGTH = 500
 
 const ConnectionRequestComposer = ({ vibe, onClose, onSent }) => {
+  const { t } = useTranslation()
+
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -28,9 +31,9 @@ const ConnectionRequestComposer = ({ vibe, onClose, onSent }) => {
       console.error('Failed to send connection request:', error)
 
       if (error.code === '23505') {
-        setError("You've already used your connection request for this Vibe.")
+        setError(t('vibe.connection.composer.alreadyUsed'))
       } else {
-        setError(error.message || 'Could not send your message.')
+        setError(t('vibe.connection.composer.sendError'))
       }
     } finally {
       setSending(false)
@@ -46,9 +49,11 @@ const ConnectionRequestComposer = ({ vibe, onClose, onSent }) => {
         onTouchEnd={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-vibe-apricot-dark">Connect through this Vibe</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-vibe-apricot-dark">
+              {t('vibe.connection.composer.eyebrow')}
+            </p>
 
-            <h2 className="mt-2 text-xl font-black text-vibe-petrol">Say something to {vibe.display_name}</h2>
+            <h2 className="mt-2 text-xl font-black text-vibe-petrol">{t('vibe.connection.composer.title', { name: vibe.display_name })}</h2>
           </div>
 
           <button
@@ -61,18 +66,15 @@ const ConnectionRequestComposer = ({ vibe, onClose, onSent }) => {
         </div>
 
         <div className="mt-4 rounded-2xl bg-vibe-surface p-4">
-          <p className="text-sm font-semibold text-vibe-petrol">You get one message.</p>
+          <p className="text-sm font-semibold text-vibe-petrol">{t('vibe.connection.composer.oneMessageTitle')}</p>
 
-          <p className="mt-1 text-sm leading-5 text-vibe-muted">
-            If they reply within one hour, conversation unlocks. If they don't, this request expires and you can't contact them again
-            through this Vibe.
-          </p>
+          <p className="mt-1 text-sm leading-5 text-vibe-muted">{t('vibe.connection.composer.oneMessageDescription')}</p>
         </div>
 
         <div className="mt-4">
           <textarea
             className="min-h-28 w-full resize-none rounded-2xl border border-vibe-petrol/15 bg-vibe-surface px-4 py-4 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-apricot"
-            placeholder="Write your message..."
+            placeholder={t('vibe.connection.composer.placeholder')}
             value={message}
             maxLength={MAX_MESSAGE_LENGTH}
             disabled={sending}
@@ -98,10 +100,10 @@ const ConnectionRequestComposer = ({ vibe, onClose, onSent }) => {
           disabled={!message.trim() || sending}
           onClick={handleSend}>
           {sending ? (
-            'Sending...'
+            t('vibe.connection.composer.sending')
           ) : (
             <>
-              Send your one message
+              {t('vibe.connection.composer.send')}
               <FiArrowRight />
             </>
           )}

@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiSend } from 'react-icons/fi'
 import { MdGif } from 'react-icons/md'
 import GifPicker from './gifPicker.jsx'
 
 const MessageComposer = ({ inputRef, message, sending, maxLength, onChange, onKeyDown, onSend, onGifSelect }) => {
+  const { t } = useTranslation()
   const [gifPickerOpen, setGifPickerOpen] = useState(false)
 
   // ---------------------------------------------------------------------------
@@ -39,7 +41,7 @@ const MessageComposer = ({ inputRef, message, sending, maxLength, onChange, onKe
         <textarea
           ref={inputRef}
           className="max-h-32 min-h-11 min-w-0 flex-1 resize-none rounded-3xl border border-vibe-petrol/10 bg-vibe-bg px-4 py-3 text-sm leading-5 text-vibe-text outline-none transition placeholder:text-vibe-muted/60 focus:border-vibe-petrol/30"
-          placeholder="Message..."
+          placeholder={t('conversation.messages.placeholder')}
           value={message}
           maxLength={maxLength}
           rows={1}

@@ -1,0 +1,450 @@
+{
+  "common": {
+    "appName": "VibeMoments",
+    "back": "Wstecz",
+    "continue": "Dalej",
+    "cancel": "Anuluj",
+    "edit": "Edytuj",
+    "save": "Zapisz",
+    "saving": "Zapisywanie...",
+    "sending": "Wysyłanie...",
+    "tryAgain": "Spróbuj ponownie",
+    "profile": "Profil",
+    "conversation": "Rozmowa",
+    "friends": "Znajomi",
+    "vibeUser": "Użytkownik Vibe",
+    "conversationFallback": "Rozmowa",
+    "someone": "Ktoś",
+    "someoneNearby": "Ktoś w pobliżu",
+    "thisPerson": "Ta osoba",
+    "nearby": "W pobliżu",
+    "notAuthenticated": "Brak autoryzacji"
+  },
+
+  "navigation": {
+    "vibes": "Vibes",
+    "friends": "Znajomi",
+    "create": "Utwórz",
+    "inbox": "Skrzynka",
+    "profile": "Profil"
+  },
+
+  "auth": {
+    "tagline": "Zobacz, co dzieje się wokół Ciebie. Właśnie teraz.",
+
+    "login": {
+      "title": "Witaj ponownie",
+      "description": "Zaloguj się, aby zobaczyć, co dzieje się w pobliżu.",
+      "button": "Zaloguj się",
+      "newUser": "Nowy w VibeMoments?"
+    },
+
+    "register": {
+      "title": "Utwórz konto",
+      "description": "Dołącz do Vibes dziejących się wokół Ciebie.",
+      "button": "Utwórz konto",
+      "existingUser": "Masz już konto?",
+      "confirmationEmail": "Sprawdź pocztę, aby potwierdzić swoje konto."
+    },
+
+    "google": "Kontynuuj z Google",
+    "or": "lub",
+    "emailPlaceholder": "E-mail",
+    "passwordPlaceholder": "Hasło",
+    "pleaseWait": "Proszę czekać..."
+  },
+
+  "onboarding": {
+    "identity": {
+      "step": "Krok 1 z 3",
+      "title": "Wybierz swoją tożsamość Vibe",
+      "description": "Osoby w pobliżu nie muszą znać Twojego prawdziwego imienia. Użyj nazwy, którą dla Ciebie wygenerowaliśmy, albo utwórz własną.",
+      "displayName": "Nazwa wyświetlana",
+      "generateAnother": "Wygeneruj inną",
+      "previousNames": "Poprzednie nazwy",
+      "nameExplanation": "To nazwę zobaczą inni, gdy opublikujesz Vibe lub na niego zareagujesz.",
+      "minimumLengthError": "Nazwa wyświetlana musi mieć co najmniej 3 znaki.",
+      "saving": "Zapisywanie..."
+    },
+
+    "interests": {
+      "step": "Krok 2 z 3",
+      "title": "Jaki jest Twój vibe?",
+      "description": "Wybierz co najmniej {{count}} rzeczy, które Cię interesują. Nie możesz czegoś znaleźć? Dodaj własne.",
+      "addPlaceholder": "Dodaj zainteresowanie...",
+      "loading": "Ładowanie zainteresowań...",
+      "showDifferent": "Pokaż inne zainteresowania",
+      "selected": "Wybrano: {{count}}",
+      "moreNeeded": "Potrzeba jeszcze: {{count}}",
+      "saving": "Zapisywanie..."
+    },
+
+    "location": {
+      "step": "Krok 3 z 3",
+      "title": "Zobacz, co dzieje się wokół Ciebie",
+      "description": "VibeMoments korzysta z Twojej lokalizacji, aby znajdować Vibes w pobliżu i określać, które chwile mogą być dla Ciebie istotne.",
+      "privacyTitle": "Twoja lokalizacja pozostaje prywatna",
+      "privacyDescription": "Inni użytkownicy nie zobaczą Twojej aktualnej pozycji GPS. Lokalizacja służy do odkrywania Vibes w pobliżu oraz dodawania przybliżonej informacji o miejscu do publikowanych przez Ciebie chwil.",
+      "usesTitle": "Do czego jej używamy",
+      "uses": {
+        "findNearby": "Znajdowanie Vibes w Twojej okolicy",
+        "distance": "Obliczanie przybliżonej odległości",
+        "ranking": "Pomoc w sortowaniu chwil w pobliżu"
+      },
+      "permissionRequired": "Dostęp do lokalizacji jest wymagany, aby odkrywać Vibes w pobliżu.",
+      "requesting": "Prośba o dostęp do lokalizacji...",
+      "enable": "Włącz lokalizację"
+    }
+  },
+
+  "home": {
+    "eyebrow": "WŁAŚNIE TERAZ",
+    "title": "Vibes w pobliżu",
+    "withinDistance": "W promieniu {{distance}} km",
+    "finding": "Szukanie Vibes w pobliżu...",
+
+    "error": {
+      "title": "Nie udało się załadować Vibes w pobliżu",
+      "fallback": "Coś poszło nie tak podczas ładowania Vibes w pobliżu."
+    },
+
+    "empty": {
+      "title": "Na razie nic w pobliżu",
+      "description": "W promieniu {{distance}} km nie ma obecnie aktywnych Vibes. Bądź pierwszą osobą, która podzieli się tym, co się dzieje."
+    }
+  },
+
+  "vibe": {
+    "locationFallback": "W pobliżu",
+
+    "time": {
+      "now": "Teraz",
+      "justNow": "Przed chwilą",
+      "minutesShort": "{{count}} min",
+      "hoursShort": "{{count}} godz.",
+      "daysShort": "{{count}} d",
+      "minutesAgo": "{{count}} min temu",
+      "hoursAgo": "{{count}} godz. temu",
+      "daysAgo": "{{count}} d temu"
+    },
+
+    "viewer": {
+      "loading": "Ładowanie Vibe...",
+      "loadError": "Nie udało się załadować tego Vibe.",
+      "live": "NA ŻYWO"
+    },
+
+    "connection": {
+      "connect": "Połącz się →",
+      "openChat": "Otwórz czat →",
+      "requestSent": "Prośba wysłana",
+      "requestExpired": "Prośba wygasła",
+      "requestDeclined": "Prośba odrzucona",
+      "connectedSwipe": "Połączono · Przesuń w prawo, aby otworzyć czat",
+
+      "composer": {
+        "eyebrow": "Połącz się przez ten Vibe",
+        "title": "Napisz coś do {{name}}",
+        "oneMessageTitle": "Możesz wysłać jedną wiadomość.",
+        "oneMessageDescription": "Jeśli ta osoba odpowie w ciągu godziny, rozmowa zostanie odblokowana. Jeśli nie odpowie, prośba wygaśnie i nie będzie można ponownie skontaktować się z nią przez ten Vibe.",
+        "placeholder": "Napisz wiadomość...",
+        "send": "Wyślij swoją wiadomość",
+        "sending": "Wysyłanie...",
+        "alreadyUsed": "Wykorzystano już prośbę o kontakt dla tego Vibe.",
+        "sendError": "Nie udało się wysłać wiadomości."
+      }
+    }
+  },
+
+  "inbox": {
+    "eyebrow": "POŁĄCZENIA",
+    "title": "Skrzynka",
+    "description": "Prośby i rozmowy rozpoczęte przez Vibes w pobliżu.",
+
+    "tabs": {
+      "requests": "Prośby",
+      "chats": "Czaty"
+    },
+
+    "requests": {
+      "loadError": "Nie udało się załadować Twoich próśb.",
+      "emptyTitle": "Brak nowych próśb",
+      "emptyDescription": "Jeśli ktoś przesunie w prawo na jednym z Twoich Vibes i wyśle wiadomość, pojawi się ona tutaj."
+    },
+
+    "chats": {
+      "loadError": "Nie udało się załadować Twoich rozmów.",
+      "emptyTitle": "Brak rozmów",
+      "emptyDescription": "Rozmowy pojawią się tutaj, gdy twórca Vibe odpowie na prośbę o kontakt.",
+      "sentGif": "Wysłano GIF",
+      "unlocked": "Czat odblokowany przez Vibe"
+    }
+  },
+
+  "connectionRequest": {
+    "someoneNearby": "Ktoś w pobliżu",
+    "subtitle": "Skontaktował się przez Twój Vibe",
+    "pending": "Oczekuje",
+    "replyPlaceholder": "Odpowiedz, aby odblokować czat...",
+    "replying": "Odpowiadanie...",
+    "replyAndUnlock": "Odpowiedz i odblokuj czat",
+    "replyError": "Nie udało się wysłać odpowiedzi."
+  },
+
+  "conversation": {
+    "connectedThroughVibe": "Połączono przez Vibe",
+    "friends": "Znajomi",
+
+    "friendship": {
+      "addFriend": "Dodaj do znajomych",
+      "sending": "Wysyłanie...",
+      "requestSent": "Prośba wysłana",
+      "requestTitle": "Zaproszenie do znajomych",
+      "requestDescription": "{{name}} chce dodać Cię do znajomych.",
+      "decline": "Odrzuć",
+      "accept": "Akceptuj",
+      "sendError": "Nie udało się wysłać zaproszenia do znajomych.",
+      "respondError": "Nie udało się zaktualizować zaproszenia do znajomych."
+    },
+
+    "messages": {
+      "placeholder": "Wiadomość...",
+      "loadError": "Nie udało się załadować wiadomości.",
+      "emptyTitle": "Rozmowa odblokowana",
+      "emptyDescription": "Połączyliście się przez Vibe. Wasze wiadomości pojawią się tutaj.",
+      "sendError": "Nie udało się wysłać wiadomości.",
+      "gifSendError": "Nie udało się wysłać GIF-a."
+    },
+
+    "typing": "{{name}} pisze...",
+
+    "loading": "Ładowanie rozmowy...",
+    "loadError": "Nie udało się załadować tej rozmowy.",
+
+    "gifPicker": {
+      "searchPlaceholder": "Szukaj w KLIPY",
+      "loadError": "Nie udało się załadować GIF-ów.",
+      "loadErrorFallback": "Nie udało się załadować GIF-ów.",
+      "empty": "Nie znaleziono GIF-ów.",
+      "noMore": "Brak kolejnych GIF-ów",
+      "poweredBy": "Obsługiwane przez KLIPY",
+      "imageAlt": "GIF"
+    }
+  },
+
+  "createVibe": {
+    "capture": {
+      "eyebrow": "UCHWYĆ CHWILĘ",
+      "title": "Utwórz Vibe",
+      "description": "Podziel się tym, co dzieje się wokół Ciebie właśnie teraz.",
+      "openCamera": "Otwórz aparat",
+      "cameraDescription": "Zrób zdjęcie lub nagraj film",
+      "photo": "Zdjęcie",
+      "videoMaximum": "Do {{seconds}} sekund",
+      "explanation": "Uchwyć to, co dzieje się wokół Ciebie właśnie teraz, i podziel się tym z osobami w pobliżu."
+    },
+
+    "camera": {
+      "preparingSecureCapture": "Przygotowywanie bezpiecznego przechwytywania..."
+    },
+
+    "composer": {
+      "newVibe": "NOWY VIBE",
+      "newVideoVibe": "NOWY VIDEO VIBE",
+      "title": "Wygląda dobrze?",
+      "imageAlt": "Twój Vibe",
+      "captionPlaceholder": "Co się dzieje?",
+
+      "location": {
+        "title": "Tylko ogólna okolica",
+        "description": "Wyświetlana jest tylko dzielnica i miasto. Twoja dokładna lokalizacja pozostaje prywatna."
+      },
+
+      "interests": {
+        "title": "Dodaj zainteresowania",
+        "description": "Wybierz istniejące zainteresowania lub utwórz nowe, jeśli go brakuje.",
+        "addPlaceholder": "Dodaj kolejne zainteresowanie...",
+        "yourInterests": "Twoje zainteresowania",
+        "discoverMore": "Odkryj więcej",
+        "maximum": "Do jednego Vibe możesz dodać maksymalnie {{count}} zainteresowań."
+      },
+
+      "sharing": "Udostępnianie Vibe...",
+      "share": "Udostępnij Vibe"
+    }
+  },
+
+  "friends": {
+    "eyebrow": "TWOI LUDZIE",
+    "title": "Znajomi",
+    "description": "Osoby, z którymi udało Ci się nawiązać kontakt przez prawdziwe rozmowy.",
+
+    "error": {
+      "title": "Nie udało się załadować Twoich znajomych.",
+      "fallback": "Coś poszło nie tak podczas ładowania znajomych."
+    },
+
+    "empty": {
+      "title": "Nie masz jeszcze znajomych",
+      "description": "Rozmawiaj dalej z osobami poznanymi przez Vibes. Gdy relacja rozwinie się naturalnie, może pojawić się możliwość dodania się do znajomych."
+    },
+
+    "friendsSince": "Znajomi od {{date}}"
+  },
+
+  "profile": {
+    "eyebrow": "TWÓJ VIBE",
+    "title": "Profil",
+
+    "identity": {
+      "vibeUser": "Użytkownik Vibe",
+      "addBio": "Napisz trochę o sobie.",
+      "memberSince": "Użytkownik od {{date}}",
+      "editTitle": "Edytuj profil",
+      "editDescription": "Tak widzą Cię inni użytkownicy VibeMoments.",
+      "displayName": "NAZWA WYŚWIETLANA",
+      "username": "NAZWA UŻYTKOWNIKA",
+      "usernameHint": "Tylko litery, cyfry i podkreślenia.",
+      "bio": "O MNIE",
+      "bioPlaceholder": "Napisz trochę o sobie...",
+      "save": "Zapisz profil",
+      "saving": "Zapisywanie...",
+      "updated": "Profil został zaktualizowany."
+    },
+
+    "activity": {
+      "title": "Twoja aktywność",
+      "activeVibes": "Aktywne Vibes",
+      "chats": "Czaty"
+    },
+
+    "distance": {
+      "title": "Zasięg Vibe",
+      "description": "Wybierz, jak daleko od Ciebie Vibes mogą pojawiać się w Twoim kanale.",
+      "value": "{{distance}} km",
+      "ownVibesNotice": "Twoje własne aktywne Vibes są zawsze widoczne, nawet jeśli znajdują się poza tym zasięgiem.",
+      "saving": "Zapisywanie zasięgu...",
+      "updated": "Zasięg Vibe został zmieniony na {{distance}} km.",
+      "updateError": "Nie udało się zaktualizować zasięgu Vibe."
+    },
+
+    "interests": {
+      "title": "Twoje zainteresowania",
+      "description": "Pomagają dopasowywać do Ciebie odpowiednie Vibes.",
+      "none": "Nie wybrano jeszcze żadnych zainteresowań.",
+      "choose": "Wybierz zainteresowania",
+      "discoverMore": "Odkryj więcej",
+      "createPlaceholder": "Utwórz zainteresowanie...",
+      "updated": "Zainteresowania zostały zaktualizowane.",
+      "createError": "Nie udało się utworzyć tego zainteresowania.",
+      "updateError": "Nie udało się zaktualizować Twoich zainteresowań."
+    },
+
+    "account": {
+      "title": "Konto",
+      "publicIdentity": "Tożsamość publiczna",
+      "publicIdentityDescription": "Twój adres e-mail nigdy nie jest wyświetlany na publicznym profilu.",
+      "logout": "Wyloguj się"
+    },
+
+    "updateError": "Nie udało się zaktualizować profilu."
+  },
+
+  "friendProfile": {
+    "eyebrow": "PROFIL ZNAJOMEGO",
+    "loading": "Ładowanie profilu...",
+    "loadError": "Nie udało się załadować tego profilu.",
+    "noBio": "Brak opisu.",
+    "memberSince": "Użytkownik od {{date}}",
+    "friendsSince": "Znajomi od {{date}}",
+
+    "sharedInterests": {
+      "title": "Wspólne zainteresowania",
+      "description": "Rzeczy, które oboje wybraliście jako część swojej tożsamości Vibe.",
+      "none": "Brak wspólnych zainteresowań."
+    },
+
+    "theirInterests": "Ich zainteresowania",
+
+    "message": "Napisz",
+    "removeFriend": "Usuń ze znajomych",
+    "removeTitle": "Usunąć {{name}} ze znajomych?",
+    "removeDescription": "Nie będziecie już znajomymi, ale istniejąca rozmowa i historia wiadomości pozostaną zachowane.",
+    "removing": "Usuwanie...",
+    "removeError": "Nie udało się usunąć tej osoby ze znajomych.",
+    "friendshipRemoveError": "Nie udało się usunąć znajomości."
+  },
+
+  "errors": {
+    "profile": {
+      "displayNameTooShort": "Nazwa wyświetlana musi mieć co najmniej 2 znaki.",
+      "displayNameTooLong": "Nazwa wyświetlana może mieć maksymalnie 40 znaków.",
+      "usernameTooShort": "Nazwa użytkownika musi mieć co najmniej 3 znaki.",
+      "usernameTooLong": "Nazwa użytkownika może mieć maksymalnie 30 znaków.",
+      "usernameInvalid": "Nazwa użytkownika może zawierać tylko litery, cyfry i podkreślenia.",
+      "bioTooLong": "Opis może mieć maksymalnie 160 znaków.",
+      "usernameTaken": "Ta nazwa użytkownika jest już zajęta.",
+      "invalidVibeDistance": "Nieprawidłowy zasięg Vibe.",
+      "vibeDistanceRange": "Zasięg Vibe musi wynosić od 5 km do 25 km."
+    },
+
+    "interests": {
+      "invalidName": "Nieprawidłowa nazwa zainteresowania"
+    },
+
+    "camera": {
+      "captureSessionInvalid": "Sesja przechwytywania nie została utworzona prawidłowo.",
+      "prepareMode": "Nie udało się przygotować wybranego trybu przechwytywania.",
+      "prepareCamera": "Nie udało się przygotować aparatu. Spróbuj ponownie.",
+      "useCamera": "Nie udało się użyć aparatu. Spróbuj ponownie.",
+      "missingMediaFile": "Aparat nie zwrócił prawidłowego pliku multimedialnego.",
+      "missingFingerprint": "Aparat nie zwrócił cyfrowego odcisku przechwytywania.",
+      "missingSessionId": "Aparat nie zwrócił identyfikatora sesji przechwytywania.",
+      "missingNonce": "Aparat nie zwrócił wartości nonce przechwytywania.",
+      "sessionMismatch": "Sesja przechwytywania nie odpowiada aktywnej sesji aparatu.",
+      "nonceMismatch": "Wartość nonce przechwytywania nie odpowiada aktywnej sesji aparatu.",
+      "missingDeviceId": "Aparat nie zwrócił identyfikatora urządzenia.",
+      "missingSignature": "Aparat nie zwrócił podpisu przechwytywania.",
+      "missingProofVersion": "Aparat nie zwrócił wersji dowodu przechwytywania.",
+      "missingSignatureAlgorithm": "Aparat nie zwrócił algorytmu podpisu.",
+      "mediaTypeMismatch": "Typ przechwyconego medium \"{{type}}\" nie odpowiada bezpiecznemu trybowi przechwytywania \"{{mode}}\".",
+      "videoTooLong": "Film może mieć maksymalnie {{seconds}} sekund.",
+      "unsupportedMediaType": "Nieobsługiwany typ multimediów aparatu: {{type}}",
+      "processCapture": "Nie udało się przetworzyć przechwyconych multimediów.",
+      "invalidVerificationData": "To przechwycenie nie zawiera prawidłowych danych weryfikacyjnych.",
+      "locationRequiredToPublish": "Dostęp do lokalizacji jest wymagany, aby opublikować Vibe.",
+      "publishError": "Nie udało się opublikować Vibe. Spróbuj ponownie."
+    },
+
+    "captureSecurity": {
+      "missingDeviceId": "VibeCamera nie zwrócił identyfikatora urządzenia.",
+      "missingPublicKey": "VibeCamera nie zwrócił klucza publicznego przechwytywania.",
+      "registrationFailed": "Nie udało się zarejestrować urządzenia przechwytywania.",
+      "verificationFailed": "Nie udało się zweryfikować dowodu przechwytywania."
+    },
+
+    "media": {
+      "missingFile": "Nie podano pliku multimedialnego.",
+      "maximumSize": "Plik multimedialny Vibe może mieć maksymalnie 50 MB.",
+      "missingSecureProof": "Brakuje bezpiecznego dowodu przechwytywania.",
+      "proofVerificationFailed": "Weryfikacja dowodu przechwytywania nie powiodła się."
+    },
+
+    "gif": {
+      "conversationRequired": "Wymagana jest rozmowa.",
+      "validGifRequired": "Wymagany jest prawidłowy GIF.",
+      "signInRequired": "Musisz być zalogowany, aby wysłać GIF."
+    }
+  },
+
+  "settings": {
+    "eyebrow": "USTAWIENIA",
+    "title": "Ustawienia",
+    "language": {
+      "title": "Język",
+      "description": "Wybierz język używany przez VibeMoments.",
+      "system": "Domyślny język systemu",
+      "current": "Obecnie: {{language}}"
+    }
+  }
+}
