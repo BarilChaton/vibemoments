@@ -138,7 +138,14 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     if (openingCamera) return
 
     setOpeningCamera(true)
+    setCaptureSessionUpdating(true)
+    setCaptureMode(mediaType)
+    setCaptureSession(null)
+    setCaptureDeviceId(null)
     setError('')
+
+    // Open the actual camera UI immediately.
+    setCameraOpen(true)
 
     try {
       const { identity } = await registerCaptureDevice()
@@ -148,8 +155,6 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       const session = await createCaptureSession(mediaType, identity.deviceId)
 
       setCaptureSession(session)
-      setCaptureMode(mediaType)
-      setCameraOpen(true)
     } catch (captureError) {
       console.error('Failed to prepare secure camera:', captureError)
 
@@ -157,6 +162,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       setCaptureDeviceId(null)
       setError(t('errors.camera.prepareCamera'))
     } finally {
+      setCaptureSessionUpdating(false)
       setOpeningCamera(false)
     }
   }
