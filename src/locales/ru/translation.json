@@ -441,5 +441,16 @@
       "validGifRequired": "Требуется корректный GIF.",
       "signInRequired": "Чтобы отправить GIF, необходимо войти в аккаунт."
     }
+  },
+
+  "settings": {
+    "eyebrow": "НАСТРОЙКИ",
+    "title": "Настройки",
+    "language": {
+      "title": "Язык",
+      "description": "Выберите язык интерфейса VibeMoments.",
+      "system": "Системный язык",
+      "current": "Сейчас используется: {{language}}"
+    }
   }
 }

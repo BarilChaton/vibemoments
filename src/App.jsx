@@ -4,12 +4,13 @@ import useAuthStore from './stores/useAuthStore.js'
 import { registerPushNotifications } from './services/notifications.js'
 import AuthScreen from './components/auth/authScreen.jsx'
 import Onboarding from './components/onboarding/onboarding.jsx'
-import BottomNavigation from './components/navigation/BottomNavigation.jsx'
-import Home from './views/Home.jsx'
-import CreateVibe from './views/CreateVibe.jsx'
-import Profile from './views/Profile.jsx'
-import Friends from './views/Friends.jsx'
-import Inbox from './views/Inbox.jsx'
+import BottomNavigation from './components/navigation/bottomNavigation.jsx'
+import Home from './views/home.jsx'
+import CreateVibe from './views/createVibe.jsx'
+import Profile from './views/profile.jsx'
+import Friends from './views/friends.jsx'
+import Inbox from './views/inbox.jsx'
+import Settings from './views/settings.jsx'
 
 const App = () => {
   const { user, profile, initialized } = useAuthStore()
@@ -53,6 +54,15 @@ const App = () => {
   const handleViewChange = (view) => {
     setConversationToOpen(null)
     setActiveView(view)
+  }
+
+  const handleOpenSettings = () => {
+    setConversationToOpen(null)
+    setActiveView('settings')
+  }
+
+  const handleCloseSettings = () => {
+    setActiveView('profile')
   }
 
   // ---------------------------------------------------------------------------
@@ -109,10 +119,12 @@ const App = () => {
           <Inbox initialConversationId={conversationToOpen} onInitialConversationOpened={handleInitialConversationOpened} />
         )}
 
-        {activeView === 'profile' && <Profile />}
+        {activeView === 'profile' && <Profile onOpenSettings={handleOpenSettings} />}
+
+        {activeView === 'settings' && <Settings onBack={handleCloseSettings} />}
       </div>
 
-      {!cameraOpen && <BottomNavigation activeView={activeView} onChange={handleViewChange} />}
+      {!cameraOpen && activeView !== 'settings' && <BottomNavigation activeView={activeView} onChange={handleViewChange} />}
     </main>
   )
 }

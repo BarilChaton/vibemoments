@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { FiCheck, FiEdit3, FiLogOut, FiPlus, FiUser, FiX } from 'react-icons/fi'
+import { FiCheck, FiEdit3, FiLogOut, FiPlus, FiSettings, FiUser, FiX } from 'react-icons/fi'
 import { signOut } from '../services/auth.js'
-import { getProfileStats, updateProfile, updateVibeRadius } from '../services/profile.js'
+import { getProfileStats, updateProfile } from '../services/profile.js'
 import { createInterest, getRandomInterests, getUserInterests, setUserInterests } from '../services/interests.js'
 import useAuthStore from '../stores/useAuthStore.js'
 
 const MAX_INTERESTS = 10
-const MIN_VIBE_RADIUS_KM = 5
-const MAX_VIBE_RADIUS_KM = 25
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -28,7 +26,7 @@ const formatMemberSince = (createdAt, language) => {
 // Component
 // -----------------------------------------------------------------------------
 
-const Profile = () => {
+const Profile = ({ onOpenSettings }) => {
   const { t, i18n } = useTranslation()
   const { user, profile, setProfile } = useAuthStore()
   const queryClient = useQueryClient()
@@ -49,9 +47,6 @@ const Profile = () => {
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  const [vibeRadiusKm, setVibeRadiusKm] = useState(Math.round((profile?.vibe_radius_meters || 5000) / 1000))
-  const [savingVibeRadius, setSavingVibeRadius] = useState(false)
 
   const language = i18n.resolvedLanguage || i18n.language
 
@@ -231,50 +226,6 @@ const Profile = () => {
   }
 
   // ---------------------------------------------------------------------------
-  // Visible Vibes Editing
-  // ---------------------------------------------------------------------------
-
-  const handleSaveVibeRadius = async () => {
-    if (!user?.id || savingVibeRadius) return
-
-    const radiusMeters = vibeRadiusKm * 1000
-    const currentRadiusMeters = profile?.vibe_radius_meters || 5000
-
-    if (radiusMeters === currentRadiusMeters) return
-
-    setSavingVibeRadius(true)
-    setError('')
-    setSuccess('')
-
-    try {
-      const updatedProfile = await updateVibeRadius({
-        userId: user.id,
-        radiusMeters
-      })
-
-      setProfile(updatedProfile)
-
-      await queryClient.invalidateQueries({
-        queryKey: ['nearby-vibes']
-      })
-
-      setSuccess(
-        t('profile.distance.updated', {
-          distance: vibeRadiusKm
-        })
-      )
-    } catch (radiusError) {
-      console.error('Failed to update Vibe distance:', radiusError)
-
-      setError(t('profile.distance.updateError'))
-
-      setVibeRadiusKm(Math.round((profile?.vibe_radius_meters || 5000) / 1000))
-    } finally {
-      setSavingVibeRadius(false)
-    }
-  }
-
-  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -283,9 +234,20 @@ const Profile = () => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="shrink-0 px-6 pb-4 pt-5">
-        <p className="text-sm font-semibold text-vibe-apricot-dark">{t('profile.eyebrow')}</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-vibe-apricot-dark">{t('profile.eyebrow')}</p>
 
-        <h1 className="mt-1 text-3xl font-black text-vibe-petrol">{t('profile.title')}</h1>
+            <h1 className="mt-1 text-3xl font-black text-vibe-petrol">{t('profile.title')}</h1>
+          </div>
+
+          <button
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-vibe-surface text-vibe-petrol shadow-sm transition active:scale-95"
+            type="button"
+            onClick={onOpenSettings}>
+            <FiSettings className="text-xl" />
+          </button>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-28">
@@ -420,59 +382,13 @@ const Profile = () => {
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-vibe-surface p-4">
               <p className="text-2xl font-black text-vibe-petrol">{statsLoading ? '—' : stats.vibes}</p>
-
               <p className="mt-1 text-xs font-semibold text-vibe-muted">{t('profile.activity.activeVibes')}</p>
             </div>
 
             <div className="rounded-2xl bg-vibe-surface p-4">
               <p className="text-2xl font-black text-vibe-petrol">{statsLoading ? '—' : stats.chats}</p>
-
               <p className="mt-1 text-xs font-semibold text-vibe-muted">{t('profile.activity.chats')}</p>
             </div>
-          </div>
-        </div>
-
-        {/* Vibe distance */}
-        <div className="mt-7">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="font-black text-vibe-petrol">{t('profile.distance.title')}</h3>
-
-              <p className="mt-1 text-xs leading-5 text-vibe-muted">{t('profile.distance.description')}</p>
-            </div>
-
-            <div className="shrink-0 rounded-full bg-vibe-petrol px-3 py-1.5 text-sm font-black text-vibe-surface">
-              {t('profile.distance.value', { distance: vibeRadiusKm })}
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-3xl bg-vibe-surface p-5 shadow-sm">
-            <input
-              className="w-full accent-vibe-petrol"
-              type="range"
-              min={MIN_VIBE_RADIUS_KM}
-              max={MAX_VIBE_RADIUS_KM}
-              step="1"
-              value={vibeRadiusKm}
-              disabled={savingVibeRadius}
-              onChange={(event) => {
-                setVibeRadiusKm(Number(event.target.value))
-                setError('')
-                setSuccess('')
-              }}
-              onPointerUp={handleSaveVibeRadius}
-              onTouchEnd={handleSaveVibeRadius}
-              onKeyUp={handleSaveVibeRadius}
-            />
-
-            <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-vibe-muted">
-              <span>{t('profile.distance.value', { distance: MIN_VIBE_RADIUS_KM })}</span>
-              <span>{t('profile.distance.value', { distance: MAX_VIBE_RADIUS_KM })}</span>
-            </div>
-
-            <p className="mt-4 text-xs leading-5 text-vibe-muted">{t('profile.distance.ownVibesNotice')}</p>
-
-            {savingVibeRadius && <p className="mt-3 text-xs font-semibold text-vibe-petrol">{t('profile.distance.saving')}</p>}
           </div>
         </div>
 
@@ -481,7 +397,6 @@ const Profile = () => {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="font-black text-vibe-petrol">{t('profile.interests.title')}</h3>
-
               <p className="mt-1 text-xs text-vibe-muted">{t('profile.interests.description')}</p>
             </div>
 
@@ -636,7 +551,6 @@ const Profile = () => {
 
               <div>
                 <p className="text-sm font-semibold text-vibe-text">{t('profile.account.publicIdentity')}</p>
-
                 <p className="mt-0.5 text-xs text-vibe-muted">{t('profile.account.publicIdentityDescription')}</p>
               </div>
             </div>
