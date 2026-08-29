@@ -1,39 +1,53 @@
 import { Camera } from '@barilchaton/vibemoments-camera'
 import { supabase } from './supabase.js'
 
+let captureDeviceRegistrationPromise = null
+
 export const registerCaptureDevice = async () => {
-  const identity = await Camera.getCaptureIdentity()
-
-  if (!identity?.deviceId) {
-    throw new Error('VibeCamera did not return a device ID.')
+  if (captureDeviceRegistrationPromise) {
+    return captureDeviceRegistrationPromise
   }
 
-  if (!identity?.publicKey) {
-    throw new Error('VibeCamera did not return a capture public key.')
-  }
+  captureDeviceRegistrationPromise = (async () => {
+    const identity = await Camera.getCaptureIdentity()
 
-  const { data, error } = await supabase.functions.invoke('register-capture-device', {
-    body: {
-      deviceId: identity.deviceId,
-      publicKey: identity.publicKey,
-      algorithm: identity.algorithm,
-      proofVersion: identity.proofVersion
+    if (!identity?.deviceId) {
+      throw new Error('VibeCamera did not return a device ID.')
     }
-  })
 
-  if (error) {
-    console.error('Capture device registration failed:', error)
+    if (!identity?.publicKey) {
+      throw new Error('VibeCamera did not return a capture public key.')
+    }
 
+    const { data, error } = await supabase.functions.invoke('register-capture-device', {
+      body: {
+        deviceId: identity.deviceId,
+        publicKey: identity.publicKey,
+        algorithm: identity.algorithm,
+        proofVersion: identity.proofVersion
+      }
+    })
+
+    if (error) {
+      console.error('Capture device registration failed:', error)
+      throw error
+    }
+
+    if (!data?.registered) {
+      throw new Error('Capture device could not be registered.')
+    }
+
+    return {
+      identity,
+      registration: data
+    }
+  })()
+
+  try {
+    return await captureDeviceRegistrationPromise
+  } catch (error) {
+    captureDeviceRegistrationPromise = null
     throw error
-  }
-
-  if (!data?.registered) {
-    throw new Error('Capture device could not be registered.')
-  }
-
-  return {
-    identity,
-    registration: data
   }
 }
 

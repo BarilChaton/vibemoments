@@ -7,6 +7,7 @@ import { Camera } from '@barilchaton/vibemoments-camera'
 import { reverseGeocode } from '../services/geocoding.js'
 import { publishVibe } from '../services/vibes.js'
 import { createInterest, getRandomInterests, getUserInterests } from '../services/interests.js'
+import { prepareCameraStartup } from '../services/cameraStartup.js'
 import {
   createMediaFile,
   createMediaThumbnail,
@@ -138,18 +139,20 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     if (openingCamera) return
 
     setOpeningCamera(true)
+    setCaptureSessionUpdating(true)
+    setCaptureMode(mediaType)
+    setCaptureSession(null)
+    setCaptureDeviceId(null)
     setError('')
 
     try {
-      const { identity } = await registerCaptureDevice()
-
-      setCaptureDeviceId(identity.deviceId)
-
-      const session = await createCaptureSession(mediaType, identity.deviceId)
-
-      setCaptureSession(session)
-      setCaptureMode(mediaType)
-      setCameraOpen(true)
+      await prepareCameraStartup({
+        registerCaptureDevice,
+        createCaptureSession,
+        onCameraOpen: () => setCameraOpen(true),
+        onDeviceReady: (deviceId) => setCaptureDeviceId(deviceId),
+        onSessionReady: (session) => setCaptureSession(session)
+      })
     } catch (captureError) {
       console.error('Failed to prepare secure camera:', captureError)
 
@@ -157,6 +160,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
       setCaptureDeviceId(null)
       setError(t('errors.camera.prepareCamera'))
     } finally {
+      setCaptureSessionUpdating(false)
       setOpeningCamera(false)
     }
   }
