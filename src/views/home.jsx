@@ -10,7 +10,7 @@ import VibeCard from '../components/vibes/vibeCard.jsx'
 import VibeViewer from '../components/vibes/vibeViewer.jsx'
 
 // Test
-import { loadNativeAd } from '../services/nativeAds.js'
+import { loadNativeAd } from '../services/nativeMonetization.js'
 
 const loadNearbyVibes = async (radiusMeters) => {
   const position = await Geolocation.getCurrentPosition({
@@ -45,6 +45,8 @@ const Home = ({ onOpenConversation }) => {
     const testNativeAd = async () => {
       try {
         const ad = await loadNativeAd()
+
+        if (!ad) return
 
         console.log('Native Ad loaded:', ad)
       } catch (error) {
