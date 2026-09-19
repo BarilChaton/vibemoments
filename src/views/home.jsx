@@ -6,7 +6,6 @@ import { getNearbyVibes, getVibeMediaUrl } from '../services/vibes.js'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '../stores/useAuthStore.js'
 import useFeedReactionActivity from '../hooks/useFeedReactionActivity.js'
-import NativeAdSlot from '../components/ads/nativeAdSlot.jsx'
 import VibeCard from '../components/vibes/vibeCard.jsx'
 import VibeViewer from '../components/vibes/vibeViewer.jsx'
 
@@ -107,25 +106,19 @@ const Home = ({ onOpenConversation }) => {
           </div>
         </div>
       ) : vibes.length === 0 ? (
-        <div className="flex flex-1 flex-col px-3">
-          <NativeAdSlot />
+        <div className="flex flex-1 items-center justify-center px-6 text-center">
+          <div>
+            <div className="mx-auto mb-5 size-3 rounded-full bg-vibe-lime shadow-lg shadow-vibe-lime/30" />
 
-          <div className="flex flex-1 items-center justify-center px-6 text-center">
-            <div>
-              <div className="mx-auto mb-5 size-3 rounded-full bg-vibe-lime shadow-lg shadow-vibe-lime/30" />
+            <h2 className="text-xl font-bold text-vibe-text">{t('home.empty.title')}</h2>
 
-              <h2 className="text-xl font-bold text-vibe-text">{t('home.empty.title')}</h2>
-
-              <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-                {t('home.empty.description', { distance: vibeRadiusKm })}
-              </p>
-            </div>
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
+              {t('home.empty.description', { distance: vibeRadiusKm })}
+            </p>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 px-3 pb-8 pt-2">
-          <NativeAdSlot />
-
           {vibes.map((vibe, index) => (
             <VibeCard key={vibe.id} vibe={vibe} reactionActivity={reactionActivity[vibe.id]} onClick={() => setSelectedVibeIndex(index)} />
           ))}
