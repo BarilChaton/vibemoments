@@ -13,3 +13,22 @@ export const loadNativeAd = async () => {
     adUnitId: 'ca-app-pub-3940256099942544/2247696110'
   })
 }
+
+export const showNativeAd = async (element) => {
+  if (!Capacitor.isNativePlatform() || !element) return
+
+  const rect = element.getBoundingClientRect()
+
+  return VibeNativeAd.showAd({
+    x: rect.left,
+    y: rect.top,
+    width: rect.width,
+    height: rect.height
+  })
+}
+
+export const hideNativeAd = async () => {
+  if (!Capacitor.isNativePlatform()) return
+
+  return VibeNativeAd.hideAd()
+}

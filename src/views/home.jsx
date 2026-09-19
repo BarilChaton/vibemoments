@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiMapPin, FiRefreshCw } from 'react-icons/fi'
@@ -6,11 +6,9 @@ import { getNearbyVibes, getVibeMediaUrl } from '../services/vibes.js'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '../stores/useAuthStore.js'
 import useFeedReactionActivity from '../hooks/useFeedReactionActivity.js'
+import NativeAdSlot from '../components/ads/nativeAdSlot.jsx'
 import VibeCard from '../components/vibes/vibeCard.jsx'
 import VibeViewer from '../components/vibes/vibeViewer.jsx'
-
-// Test
-import { loadNativeAd } from '../services/nativeMonetization.js'
 
 const loadNearbyVibes = async (radiusMeters) => {
   const position = await Geolocation.getCurrentPosition({
@@ -40,22 +38,6 @@ const loadNearbyVibes = async (radiusMeters) => {
 const Home = ({ onOpenConversation }) => {
   const { profile } = useAuthStore()
   const { t } = useTranslation()
-
-  useEffect(() => {
-    const testNativeAd = async () => {
-      try {
-        const ad = await loadNativeAd()
-
-        if (!ad) return
-
-        console.log('Native Ad loaded:', ad)
-      } catch (error) {
-        console.error('Native Ad failed:', error)
-      }
-    }
-
-    testNativeAd()
-  }, [])
 
   const vibeRadiusMeters = profile?.vibe_radius_meters || 5000
   const vibeRadiusKm = Math.round(vibeRadiusMeters / 1000)
@@ -125,19 +107,25 @@ const Home = ({ onOpenConversation }) => {
           </div>
         </div>
       ) : vibes.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center px-6 text-center">
-          <div>
-            <div className="mx-auto mb-5 size-3 rounded-full bg-vibe-lime shadow-lg shadow-vibe-lime/30" />
+        <div className="flex flex-1 flex-col px-3">
+          <NativeAdSlot />
 
-            <h2 className="text-xl font-bold text-vibe-text">{t('home.empty.title')}</h2>
+          <div className="flex flex-1 items-center justify-center px-6 text-center">
+            <div>
+              <div className="mx-auto mb-5 size-3 rounded-full bg-vibe-lime shadow-lg shadow-vibe-lime/30" />
 
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
-              {t('home.empty.description', { distance: vibeRadiusKm })}
-            </p>
+              <h2 className="text-xl font-bold text-vibe-text">{t('home.empty.title')}</h2>
+
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-vibe-muted">
+                {t('home.empty.description', { distance: vibeRadiusKm })}
+              </p>
+            </div>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 px-3 pb-8 pt-2">
+          <NativeAdSlot />
+
           {vibes.map((vibe, index) => (
             <VibeCard key={vibe.id} vibe={vibe} reactionActivity={reactionActivity[vibe.id]} onClick={() => setSelectedVibeIndex(index)} />
           ))}
