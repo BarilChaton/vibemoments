@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Geolocation } from '@capacitor/geolocation'
 import { FiMapPin, FiRefreshCw } from 'react-icons/fi'
@@ -8,6 +8,7 @@ import useAuthStore from '../stores/useAuthStore.js'
 import useFeedReactionActivity from '../hooks/useFeedReactionActivity.js'
 import VibeCard from '../components/vibes/vibeCard.jsx'
 import VibeViewer from '../components/vibes/vibeViewer.jsx'
+import WebAdCard from '../components/ads/webAdCard.jsx'
 
 const loadNearbyVibes = async (radiusMeters) => {
   const position = await Geolocation.getCurrentPosition({
@@ -40,6 +41,7 @@ const Home = ({ onOpenConversation }) => {
 
   const vibeRadiusMeters = profile?.vibe_radius_meters || 5000
   const vibeRadiusKm = Math.round(vibeRadiusMeters / 1000)
+  const adsEnabled = import.meta.env.VITE_ADS_ENABLED === 'true'
 
   const {
     data: vibes = [],
@@ -120,7 +122,11 @@ const Home = ({ onOpenConversation }) => {
       ) : (
         <div className="grid grid-cols-2 gap-3 px-3 pb-8 pt-2">
           {vibes.map((vibe, index) => (
-            <VibeCard key={vibe.id} vibe={vibe} reactionActivity={reactionActivity[vibe.id]} onClick={() => setSelectedVibeIndex(index)} />
+            <Fragment key={vibe.id}>
+              <VibeCard vibe={vibe} reactionActivity={reactionActivity[vibe.id]} onClick={() => setSelectedVibeIndex(index)} />
+
+              {adsEnabled && (index + 1) % 16 === 0 && <WebAdCard slotId={`feed-ad-${Math.floor((index + 1) / 16)}`} />}
+            </Fragment>
           ))}
         </div>
       )}
