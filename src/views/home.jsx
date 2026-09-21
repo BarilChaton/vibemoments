@@ -41,6 +41,7 @@ const Home = ({ onOpenConversation }) => {
 
   const vibeRadiusMeters = profile?.vibe_radius_meters || 5000
   const vibeRadiusKm = Math.round(vibeRadiusMeters / 1000)
+  const adsEnabled = import.meta.env.VITE_ADS_ENABLED === 'true'
 
   const {
     data: vibes = [],
@@ -124,7 +125,7 @@ const Home = ({ onOpenConversation }) => {
             <Fragment key={vibe.id}>
               <VibeCard vibe={vibe} reactionActivity={reactionActivity[vibe.id]} onClick={() => setSelectedVibeIndex(index)} />
 
-              {(index + 1) % 16 === 0 && <WebAdCard slotId={`feed-ad-${Math.floor((index + 1) / 16)}`} />}
+              {adsEnabled && (index + 1) % 16 === 0 && <WebAdCard slotId={`feed-ad-${Math.floor((index + 1) / 16)}`} />}
             </Fragment>
           ))}
         </div>
