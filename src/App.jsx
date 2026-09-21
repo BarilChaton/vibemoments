@@ -108,19 +108,16 @@ const App = () => {
 
   return (
     <main className={`flex h-dvh flex-col overflow-hidden text-vibe-text ${cameraOpen ? 'bg-transparent' : 'bg-vibe-bg'}`}>
-      <div className={`flex min-h-0 flex-1 flex-col ${activeView === 'inbox' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      <div
+        id="app-scroll-container"
+        className={`flex min-h-0 flex-1 flex-col ${activeView === 'inbox' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {activeView === 'home' && <Home onOpenConversation={handleOpenConversation} />}
-
         {activeView === 'friends' && <Friends onOpenConversation={handleOpenConversation} />}
-
         {activeView === 'create' && <CreateVibe onPublished={handleVibePublished} onCameraOpenChange={setCameraOpen} />}
-
         {activeView === 'inbox' && (
           <Inbox initialConversationId={conversationToOpen} onInitialConversationOpened={handleInitialConversationOpened} />
         )}
-
         {activeView === 'profile' && <Profile onOpenSettings={handleOpenSettings} />}
-
         {activeView === 'settings' && <Settings onBack={handleCloseSettings} />}
       </div>
 
