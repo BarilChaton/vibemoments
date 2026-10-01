@@ -266,7 +266,10 @@
       "cameraDescription": "Ta ett foto eller spela in en video",
       "photo": "Foto",
       "videoMaximum": "Upp till {{seconds}} sekunder",
-      "explanation": "Fånga vad som händer omkring dig just nu och dela det med personer i närheten."
+      "explanation": "Fånga vad som händer omkring dig just nu och dela det med personer i närheten.",
+      "permissionBlockedTitle": "Kameraåtkomst är avstängd",
+      "permissionBlockedDescription": "Aktivera kameraåtkomst för VibeMoments i Android-inställningarna för att ta foton och spela in videor.",
+      "permissionRequiredDescription": "Kameraåtkomst krävs innan du kan skapa en Vibe."
     },
 
     "camera": {

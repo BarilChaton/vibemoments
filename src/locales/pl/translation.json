@@ -266,7 +266,10 @@
       "cameraDescription": "Zrób zdjęcie lub nagraj film",
       "photo": "Zdjęcie",
       "videoMaximum": "Do {{seconds}} sekund",
-      "explanation": "Uchwyć to, co dzieje się wokół Ciebie właśnie teraz, i podziel się tym z osobami w pobliżu."
+      "explanation": "Uchwyć to, co dzieje się wokół Ciebie właśnie teraz, i podziel się tym z osobami w pobliżu.",
+      "permissionBlockedTitle": "Dostęp do aparatu jest wyłączony",
+      "permissionBlockedDescription": "Włącz dostęp do aparatu dla VibeMoments w ustawieniach Androida, aby robić zdjęcia i nagrywać filmy.",
+      "permissionRequiredDescription": "Dostęp do aparatu jest wymagany, zanim będzie można utworzyć Vibe."
     },
 
     "camera": {

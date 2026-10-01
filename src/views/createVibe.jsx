@@ -28,6 +28,7 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   const { user } = useAuthStore()
   const { t } = useTranslation()
 
+  const [cameraPermissionStatus, setCameraPermissionStatus] = useState(null)
   const [cameraOpen, setCameraOpen] = useState(false)
   const [captureSession, setCaptureSession] = useState(null)
   const [captureDeviceId, setCaptureDeviceId] = useState(null)
@@ -172,14 +173,9 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
     try {
       const permission = await Camera.checkPermissions()
+      setCameraPermissionStatus(permission.camera)
 
       if (permission.camera !== 'granted') {
-        if (permission.camera === 'blocked') {
-          setError(t('errors.camera.permissionBlocked'))
-        } else {
-          setError(t('errors.camera.permissionRequired'))
-        }
-
         return
       }
 
@@ -650,7 +646,14 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   // ---------------------------------------------------------------------------
 
   if (!media) {
-    return <VibeCaptureScreen error={error} openingCamera={openingCamera} onOpenCamera={openCamera} />
+    return (
+      <VibeCaptureScreen
+        error={error}
+        cameraPermissionStatus={cameraPermissionStatus}
+        openingCamera={openingCamera}
+        onOpenCamera={openCamera}
+      />
+    )
   }
 
   // ---------------------------------------------------------------------------

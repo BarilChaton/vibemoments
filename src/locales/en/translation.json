@@ -266,7 +266,10 @@
       "cameraDescription": "Take a photo or record a video",
       "photo": "Photo",
       "videoMaximum": "Up to {{seconds}} seconds",
-      "explanation": "Capture what's happening around you right now and share it with nearby people."
+      "explanation": "Capture what's happening around you right now and share it with nearby people.",
+      "permissionBlockedTitle": "Camera access is disabled",
+      "permissionBlockedDescription": "Enable Camera for VibeMoments in Android Settings to create photos and videos.",
+      "permissionRequiredDescription": "Camera access is required before you can create a Vibe."
     },
 
     "camera": {
