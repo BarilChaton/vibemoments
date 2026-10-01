@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
-import useAuthStore from './stores/useAuthStore.js'
 import { registerPushNotifications } from './services/notifications.js'
 import { checkAppPermissions } from './services/permissions.js'
+import useAuthStore from './stores/useAuthStore.js'
 import AuthScreen from './components/auth/authScreen.jsx'
 import Onboarding from './components/onboarding/onboarding.jsx'
 import BottomNavigation from './components/navigation/bottomNavigation.jsx'
+import PermissionGate from './components/permissions/permissionGate.jsx'
 import Home from './views/home.jsx'
 import CreateVibe from './views/createVibe.jsx'
 import Profile from './views/profile.jsx'
@@ -22,12 +23,6 @@ const App = () => {
   const [activeView, setActiveView] = useState('home')
   const [conversationToOpen, setConversationToOpen] = useState(null)
   const [cameraOpen, setCameraOpen] = useState(false)
-
-  // const [permissionStatuses, setPermissionStatuses] = useState({
-  //   camera: 'prompt',
-  //   location: 'prompt',
-  //   notifications: 'prompt'
-  // })
 
   // ---------------------------------------------------------------------------
   // Permission status
@@ -155,27 +150,29 @@ const App = () => {
   // ---------------------------------------------------------------------------
 
   return (
-    <main className={`flex h-dvh flex-col overflow-hidden text-vibe-text ${cameraOpen ? 'bg-transparent' : 'bg-vibe-bg'}`}>
-      <div
-        id="app-scroll-container"
-        className={`flex min-h-0 flex-1 flex-col ${activeView === 'inbox' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-        {activeView === 'home' && <Home onOpenConversation={handleOpenConversation} />}
+    <PermissionGate>
+      <main className={`flex h-dvh flex-col overflow-hidden text-vibe-text ${cameraOpen ? 'bg-transparent' : 'bg-vibe-bg'}`}>
+        <div
+          id="app-scroll-container"
+          className={`flex min-h-0 flex-1 flex-col ${activeView === 'inbox' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+          {activeView === 'home' && <Home onOpenConversation={handleOpenConversation} />}
 
-        {activeView === 'friends' && <Friends onOpenConversation={handleOpenConversation} />}
+          {activeView === 'friends' && <Friends onOpenConversation={handleOpenConversation} />}
 
-        {activeView === 'create' && <CreateVibe onPublished={handleVibePublished} onCameraOpenChange={setCameraOpen} />}
+          {activeView === 'create' && <CreateVibe onPublished={handleVibePublished} onCameraOpenChange={setCameraOpen} />}
 
-        {activeView === 'inbox' && (
-          <Inbox initialConversationId={conversationToOpen} onInitialConversationOpened={handleInitialConversationOpened} />
-        )}
+          {activeView === 'inbox' && (
+            <Inbox initialConversationId={conversationToOpen} onInitialConversationOpened={handleInitialConversationOpened} />
+          )}
 
-        {activeView === 'profile' && <Profile onOpenSettings={handleOpenSettings} />}
+          {activeView === 'profile' && <Profile onOpenSettings={handleOpenSettings} />}
 
-        {activeView === 'settings' && <Settings onBack={handleCloseSettings} />}
-      </div>
+          {activeView === 'settings' && <Settings onBack={handleCloseSettings} />}
+        </div>
 
-      {!cameraOpen && activeView !== 'settings' && <BottomNavigation activeView={activeView} onChange={handleViewChange} />}
-    </main>
+        {!cameraOpen && activeView !== 'settings' && <BottomNavigation activeView={activeView} onChange={handleViewChange} />}
+      </main>
+    </PermissionGate>
   )
 }
 

@@ -12,7 +12,7 @@ import useAuthStore from '../../stores/useAuthStore.js'
 
 const PERMISSIONS = ['location', 'camera', 'notifications']
 
-const PermissionsStep = ({ onBack }) => {
+const PermissionsStep = ({ onBack, recoveryMode = false, onComplete }) => {
   const { t } = useTranslation()
   const { user, setProfile } = useAuthStore()
 
@@ -55,6 +55,16 @@ const PermissionsStep = ({ onBack }) => {
   const CurrentIcon = currentConfig.icon
   const currentStatus = statuses[currentPermission]
 
+  const findNextMissingPermission = (currentStatuses, startIndex) => {
+    for (let index = startIndex; index < PERMISSIONS.length; index += 1) {
+      if (currentStatuses[PERMISSIONS[index]] !== 'granted') {
+        return index
+      }
+    }
+
+    return -1
+  }
+
   // ---------------------------------------------------------------------------
   // Initial permission check
   // ---------------------------------------------------------------------------
@@ -74,6 +84,8 @@ const PermissionsStep = ({ onBack }) => {
 
         if (firstMissingIndex >= 0) {
           setCurrentIndex(firstMissingIndex)
+        } else if (recoveryMode) {
+          onComplete?.()
         } else {
           setCurrentIndex(PERMISSIONS.length - 1)
         }
@@ -95,7 +107,7 @@ const PermissionsStep = ({ onBack }) => {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [onComplete, recoveryMode, t])
 
   // ---------------------------------------------------------------------------
   // Request current permission
@@ -156,19 +168,26 @@ const PermissionsStep = ({ onBack }) => {
   const handleContinue = async () => {
     setError('')
 
-    if (currentIndex < PERMISSIONS.length - 1) {
-      setCurrentIndex((current) => current + 1)
+    const nextMissingIndex = findNextMissingPermission(statuses, currentIndex + 1)
+
+    if (nextMissingIndex >= 0) {
+      setCurrentIndex(nextMissingIndex)
       return
     }
 
     setFinishing(true)
 
     try {
+      if (recoveryMode) {
+        onComplete?.()
+        return
+      }
+
       const profile = await completeOnboarding(user.id)
 
       setProfile(profile)
     } catch (completeError) {
-      console.error('Failed to complete onboarding:', completeError)
+      console.error('Failed to complete permission setup:', completeError)
 
       setError(t('onboarding.permissions.completeError'))
     } finally {
@@ -209,13 +228,15 @@ const PermissionsStep = ({ onBack }) => {
 
   return (
     <div className="flex flex-1 flex-col">
-      <button
-        className="mb-6 flex w-fit items-center gap-2 text-sm font-medium text-vibe-muted transition hover:text-vibe-petrol active:opacity-50"
-        type="button"
-        onClick={onBack}>
-        <FiArrowLeft />
-        {t('common.back')}
-      </button>
+      {!recoveryMode && (
+        <button
+          className="mb-6 flex w-fit items-center gap-2 text-sm font-medium text-vibe-muted transition hover:text-vibe-petrol active:opacity-50"
+          type="button"
+          onClick={onBack}>
+          <FiArrowLeft />
+          {t('common.back')}
+        </button>
+      )}
 
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">
