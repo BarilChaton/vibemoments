@@ -1,4 +1,5 @@
 import { FiCamera, FiSettings, FiVideo } from 'react-icons/fi'
+import { openAppSettings } from '../../native/appSettings.js'
 import { useTranslation } from 'react-i18next'
 import { MAX_VIDEO_DURATION } from '../../utils/vibeMedia.js'
 
@@ -28,6 +29,14 @@ const VibeCaptureScreen = ({ error, cameraPermissionStatus, onOpenCamera }) => {
             <h2 className="mt-5 text-lg font-bold text-vibe-text">{t('createVibe.capture.permissionBlockedTitle')}</h2>
 
             <p className="mt-2 max-w-xs text-sm leading-6 text-vibe-muted">{t('createVibe.capture.permissionBlockedDescription')}</p>
+
+            <button
+              className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-vibe-petrol px-5 py-3 font-bold text-vibe-surface transition active:scale-[0.98]"
+              type="button"
+              onClick={openAppSettings}>
+              <FiSettings />
+              {t('createVibe.capture.openSettings')}
+            </button>
           </div>
         ) : (
           <button

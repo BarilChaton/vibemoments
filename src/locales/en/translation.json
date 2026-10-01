@@ -108,7 +108,9 @@
 
       "settings": {
         "title": "Permission must be changed in Android Settings",
-        "description": "This permission can no longer be requested directly. Open Android Settings, find VibeMoments, open Permissions and enable it there."
+        "description": "This permission can no longer be requested directly. Open Android Settings, find VibeMoments, open Permissions and enable it there.",
+        "open": "Open settings",
+        "openError": "Could not open Android Settings. Please open the VibeMoments app settings manually."
       },
 
       "checking": "Checking permissions...",
@@ -269,7 +271,8 @@
       "explanation": "Capture what's happening around you right now and share it with nearby people.",
       "permissionBlockedTitle": "Camera access is disabled",
       "permissionBlockedDescription": "Enable Camera for VibeMoments in Android Settings to create photos and videos.",
-      "permissionRequiredDescription": "Camera access is required before you can create a Vibe."
+      "permissionRequiredDescription": "Camera access is required before you can create a Vibe.",
+      "openSettings": "Open settings"
     },
 
     "camera": {
