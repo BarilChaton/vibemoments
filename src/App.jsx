@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
-import { Camera } from '@barilchaton/vibemoments-camera'
 import useAuthStore from './stores/useAuthStore.js'
 import { registerPushNotifications } from './services/notifications.js'
 import { checkAppPermissions } from './services/permissions.js'
@@ -24,11 +23,11 @@ const App = () => {
   const [conversationToOpen, setConversationToOpen] = useState(null)
   const [cameraOpen, setCameraOpen] = useState(false)
 
-  const [permissionStatuses, setPermissionStatuses] = useState({
-    camera: 'prompt',
-    location: 'prompt',
-    notifications: 'prompt'
-  })
+  // const [permissionStatuses, setPermissionStatuses] = useState({
+  //   camera: 'prompt',
+  //   location: 'prompt',
+  //   notifications: 'prompt'
+  // })
 
   // ---------------------------------------------------------------------------
   // Permission status
@@ -40,21 +39,18 @@ const App = () => {
 
     let cancelled = false
     let appStateListener = null
-    let cameraPermissionListener = null
 
     const refreshPermissions = async () => {
       try {
-        const permissions = await checkAppPermissions()
-
-        if (!cancelled) {
-          setPermissionStatuses(permissions)
-        }
+        await checkAppPermissions()
       } catch (error) {
-        console.error('Failed to refresh app permissions:', error)
+        if (!cancelled) {
+          console.error('Failed to refresh app permissions:', error)
+        }
       }
     }
 
-    const setupListeners = async () => {
+    const setupListener = async () => {
       await refreshPermissions()
 
       appStateListener = await CapacitorApp.addListener('appStateChange', ({ isActive }) => {
@@ -62,26 +58,13 @@ const App = () => {
           refreshPermissions()
         }
       })
-
-      cameraPermissionListener = await Camera.addCameraPermissionChangedListener((status) => {
-        setPermissionStatuses((current) => ({
-          ...current,
-          camera: status.camera
-        }))
-
-        if (status.camera !== 'granted') {
-          setCameraOpen(false)
-        }
-      })
     }
 
-    setupListeners()
+    setupListener()
 
     return () => {
       cancelled = true
-
       appStateListener?.remove()
-      cameraPermissionListener?.remove()
     }
   }, [initialized, user?.id, profile?.onboarding_completed])
 
@@ -180,9 +163,7 @@ const App = () => {
 
         {activeView === 'friends' && <Friends onOpenConversation={handleOpenConversation} />}
 
-        {activeView === 'create' && (
-          <CreateVibe permissionStatuses={permissionStatuses} onPublished={handleVibePublished} onCameraOpenChange={setCameraOpen} />
-        )}
+        {activeView === 'create' && <CreateVibe onPublished={handleVibePublished} onCameraOpenChange={setCameraOpen} />}
 
         {activeView === 'inbox' && (
           <Inbox initialConversationId={conversationToOpen} onInitialConversationOpened={handleInitialConversationOpened} />

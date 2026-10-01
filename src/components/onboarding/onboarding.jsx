@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import IdentityStep from './identityStep.jsx'
 import InterestsStep from './interestsStep.jsx'
-import LocationStep from './locationStep.jsx'
+import PermissionsStep from './permissionsStep.jsx'
 
 const Onboarding = () => {
   const [step, setStep] = useState(1)
@@ -22,7 +22,7 @@ const Onboarding = () => {
 
         {step === 1 && <IdentityStep onNext={() => setStep(2)} />}
         {step === 2 && <InterestsStep onBack={() => setStep(1)} onNext={() => setStep(3)} />}
-        {step === 3 && <LocationStep onBack={() => setStep(2)} />}
+        {step === 3 && <PermissionsStep onBack={() => setStep(2)} />}
       </div>
     </main>
   )

@@ -79,21 +79,46 @@
       "saving": "Saving..."
     },
 
-    "location": {
-      "step": "Step 3 of 3",
-      "title": "See what’s happening around you",
-      "description": "VibeMoments uses your location to find Vibes happening nearby and to understand which moments are relevant to you.",
-      "privacyTitle": "Your location stays private",
-      "privacyDescription": "Other users will not see your live GPS position. Location is used to discover nearby Vibes and to attach approximate location information to moments you post.",
-      "usesTitle": "What we use it for",
-      "uses": {
-        "findNearby": "Find Vibes within your local area",
-        "distance": "Calculate approximate distance",
-        "ranking": "Help rank nearby moments"
+    "permissions": {
+      "step": "Step {{current}} of {{total}}",
+      "title": "Set up permissions",
+      "description": "VibeMoments uses a few permissions to make nearby discovery, capturing Vibes and notifications work properly.",
+
+      "location": {
+        "title": "Allow location access",
+        "description": "Location helps VibeMoments find nearby Vibes, calculate approximate distance and attach a general area to moments you post."
       },
-      "permissionRequired": "Location permission is required to discover nearby Vibes.",
-      "requesting": "Requesting location...",
-      "enable": "Enable location"
+
+      "camera": {
+        "title": "Allow camera access",
+        "description": "Camera access is needed to capture authentic photos and videos directly inside VibeMoments."
+      },
+
+      "notifications": {
+        "title": "Allow notifications",
+        "description": "Notifications let you know about messages, reactions, connection requests and other activity that needs your attention."
+      },
+
+      "status": {
+        "granted": "Granted",
+        "blocked": "Blocked",
+        "denied": "Denied",
+        "notGranted": "Not granted"
+      },
+
+      "settings": {
+        "title": "Permission must be changed in Android Settings",
+        "description": "This permission can no longer be requested directly. Open Android Settings, find VibeMoments, open Permissions and enable it there."
+      },
+
+      "checking": "Checking permissions...",
+      "checkError": "Could not check your current permissions.",
+      "requesting": "Requesting permission...",
+      "requestError": "Could not request this permission. Please try again.",
+      "allow": "Allow permission",
+      "finish": "Finish setup",
+      "finishing": "Finishing setup...",
+      "completeError": "Could not complete onboarding. Please try again."
     }
   },
 

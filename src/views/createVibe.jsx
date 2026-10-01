@@ -78,6 +78,35 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
   }, [cameraOpen, onCameraOpenChange])
 
   // ---------------------------------------------------------------------------
+  // Camera permission changes
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    let listener = null
+    let cancelled = false
+
+    const setupPermissionListener = async () => {
+      listener = await Camera.addCameraPermissionChangedListener((status) => {
+        if (cancelled || status.camera === 'granted') return
+
+        setCameraOpen(false)
+        setCaptureSession(null)
+        setCaptureDeviceId(null)
+        setCaptureSessionUpdating(false)
+        setCaptureMode('photo')
+        setError(t('errors.camera.permissionRequired'))
+      })
+    }
+
+    setupPermissionListener()
+
+    return () => {
+      cancelled = true
+      listener?.remove()
+    }
+  }, [t])
+
+  // ---------------------------------------------------------------------------
   // Capture session
   // ---------------------------------------------------------------------------
 
@@ -139,13 +168,26 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
     if (openingCamera) return
 
     setOpeningCamera(true)
-    setCaptureSessionUpdating(true)
-    setCaptureMode(mediaType)
-    setCaptureSession(null)
-    setCaptureDeviceId(null)
     setError('')
 
     try {
+      const permission = await Camera.checkPermissions()
+
+      if (permission.camera !== 'granted') {
+        if (permission.camera === 'blocked') {
+          setError(t('errors.camera.permissionBlocked'))
+        } else {
+          setError(t('errors.camera.permissionRequired'))
+        }
+
+        return
+      }
+
+      setCaptureSessionUpdating(true)
+      setCaptureMode(mediaType)
+      setCaptureSession(null)
+      setCaptureDeviceId(null)
+
       await prepareCameraStartup({
         registerCaptureDevice,
         createCaptureSession,
@@ -158,7 +200,12 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
       setCaptureSession(null)
       setCaptureDeviceId(null)
-      setError(t('errors.camera.prepareCamera'))
+
+      if (captureError?.code === 'CAMERA_PERMISSION_REQUIRED') {
+        setError(t('errors.camera.permissionRequired'))
+      } else {
+        setError(t('errors.camera.prepareCamera'))
+      }
     } finally {
       setCaptureSessionUpdating(false)
       setOpeningCamera(false)
@@ -175,6 +222,16 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
   const handleCameraError = (cameraError) => {
     console.error('VibeCamera error:', cameraError)
+
+    if (cameraError?.code === 'CAMERA_PERMISSION_REQUIRED') {
+      setCameraOpen(false)
+      setCaptureSession(null)
+      setCaptureDeviceId(null)
+      setCaptureSessionUpdating(false)
+      setError(t('errors.camera.permissionRequired'))
+
+      return
+    }
 
     setError(t('errors.camera.useCamera'))
   }
@@ -455,12 +512,10 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
       const permission = await Geolocation.checkPermissions()
 
-      if (permission.location !== 'granted' && permission.coarseLocation !== 'granted') {
-        const requested = await Geolocation.requestPermissions()
+      const locationGranted = permission.location === 'granted' || permission.coarseLocation === 'granted'
 
-        if (requested.location !== 'granted' && requested.coarseLocation !== 'granted') {
-          throw new Error(t('errors.camera.locationRequiredToPublish'))
-        }
+      if (!locationGranted) {
+        throw new Error(t('errors.camera.locationRequiredToPublish'))
       }
 
       const position = await Geolocation.getCurrentPosition({

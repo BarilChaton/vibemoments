@@ -79,21 +79,46 @@
       "saving": "Sparar..."
     },
 
-    "location": {
-      "step": "Steg 3 av 3",
-      "title": "Se vad som händer omkring dig",
-      "description": "VibeMoments använder din plats för att hitta Vibes i närheten och förstå vilka ögonblick som är relevanta för dig.",
-      "privacyTitle": "Din plats förblir privat",
-      "privacyDescription": "Andra användare ser inte din aktuella GPS-position. Din plats används för att hitta Vibes i närheten och för att lägga till ungefärlig platsinformation till de ögonblick du publicerar.",
-      "usesTitle": "Vad vi använder den till",
-      "uses": {
-        "findNearby": "Hitta Vibes i ditt närområde",
-        "distance": "Beräkna ungefärligt avstånd",
-        "ranking": "Hjälpa till att rangordna ögonblick i närheten"
+    "permissions": {
+      "step": "Behörighet {{current}} av {{total}}",
+      "title": "Konfigurera behörigheter",
+      "description": "VibeMoments använder några behörigheter för att upptäcka Vibes i närheten, skapa nya Vibes och hantera notiser på rätt sätt.",
+
+      "location": {
+        "title": "Tillåt platsåtkomst",
+        "description": "Din plats hjälper VibeMoments att hitta Vibes i närheten, beräkna ungefärligt avstånd och lägga till ett allmänt område till ögonblick du publicerar."
       },
-      "permissionRequired": "Platsbehörighet krävs för att hitta Vibes i närheten.",
-      "requesting": "Begär platsåtkomst...",
-      "enable": "Aktivera platsåtkomst"
+
+      "camera": {
+        "title": "Tillåt kameraåtkomst",
+        "description": "Kameraåtkomst behövs för att ta autentiska foton och spela in videor direkt i VibeMoments."
+      },
+
+      "notifications": {
+        "title": "Tillåt notiser",
+        "description": "Notiser låter dig veta när du får meddelanden, reaktioner, kontaktförfrågningar och annan aktivitet som kan behöva din uppmärksamhet."
+      },
+
+      "status": {
+        "granted": "Tillåten",
+        "blocked": "Blockerad",
+        "denied": "Nekad",
+        "notGranted": "Inte tillåten"
+      },
+
+      "settings": {
+        "title": "Behörigheten måste ändras i Android-inställningarna",
+        "description": "Den här behörigheten kan inte längre begäras direkt. Öppna Android-inställningarna, hitta VibeMoments, gå till Behörigheter och aktivera den där."
+      },
+
+      "checking": "Kontrollerar behörigheter...",
+      "checkError": "Det gick inte att kontrollera dina aktuella behörigheter.",
+      "requesting": "Begär behörighet...",
+      "requestError": "Det gick inte att begära den här behörigheten. Försök igen.",
+      "allow": "Tillåt",
+      "finish": "Slutför konfigurationen",
+      "finishing": "Slutför konfigurationen...",
+      "completeError": "Det gick inte att slutföra introduktionen. Försök igen."
     }
   },
 

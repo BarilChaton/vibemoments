@@ -79,21 +79,46 @@
       "saving": "Zapisywanie..."
     },
 
-    "location": {
-      "step": "Krok 3 z 3",
-      "title": "Zobacz, co dzieje się wokół Ciebie",
-      "description": "VibeMoments korzysta z Twojej lokalizacji, aby znajdować Vibes w pobliżu i określać, które chwile mogą być dla Ciebie istotne.",
-      "privacyTitle": "Twoja lokalizacja pozostaje prywatna",
-      "privacyDescription": "Inni użytkownicy nie zobaczą Twojej aktualnej pozycji GPS. Lokalizacja służy do odkrywania Vibes w pobliżu oraz dodawania przybliżonej informacji o miejscu do publikowanych przez Ciebie chwil.",
-      "usesTitle": "Do czego jej używamy",
-      "uses": {
-        "findNearby": "Znajdowanie Vibes w Twojej okolicy",
-        "distance": "Obliczanie przybliżonej odległości",
-        "ranking": "Pomoc w sortowaniu chwil w pobliżu"
+    "permissions": {
+      "step": "Uprawnienie {{current}} z {{total}}",
+      "title": "Skonfiguruj uprawnienia",
+      "description": "VibeMoments korzysta z kilku uprawnień, aby poprawnie działało odkrywanie Vibes w pobliżu, tworzenie nowych Vibes i powiadomienia.",
+
+      "location": {
+        "title": "Zezwól na dostęp do lokalizacji",
+        "description": "Lokalizacja pomaga VibeMoments znajdować Vibes w pobliżu, obliczać przybliżoną odległość i dodawać ogólną lokalizację do publikowanych przez Ciebie chwil."
       },
-      "permissionRequired": "Dostęp do lokalizacji jest wymagany, aby odkrywać Vibes w pobliżu.",
-      "requesting": "Prośba o dostęp do lokalizacji...",
-      "enable": "Włącz lokalizację"
+
+      "camera": {
+        "title": "Zezwól na dostęp do aparatu",
+        "description": "Dostęp do aparatu jest potrzebny, aby robić autentyczne zdjęcia i nagrywać filmy bezpośrednio w VibeMoments."
+      },
+
+      "notifications": {
+        "title": "Zezwól na powiadomienia",
+        "description": "Powiadomienia informują Cię o wiadomościach, reakcjach, prośbach o połączenie i innych aktywnościach wymagających Twojej uwagi."
+      },
+
+      "status": {
+        "granted": "Przyznano",
+        "blocked": "Zablokowano",
+        "denied": "Odmówiono",
+        "notGranted": "Nie przyznano"
+      },
+
+      "settings": {
+        "title": "To uprawnienie trzeba zmienić w ustawieniach Androida",
+        "description": "Nie można już poprosić o to uprawnienie bezpośrednio. Otwórz ustawienia Androida, znajdź VibeMoments, przejdź do sekcji Uprawnienia i włącz je tam."
+      },
+
+      "checking": "Sprawdzanie uprawnień...",
+      "checkError": "Nie udało się sprawdzić aktualnych uprawnień.",
+      "requesting": "Prośba o uprawnienie...",
+      "requestError": "Nie udało się poprosić o to uprawnienie. Spróbuj ponownie.",
+      "allow": "Zezwól",
+      "finish": "Zakończ konfigurację",
+      "finishing": "Kończenie konfiguracji...",
+      "completeError": "Nie udało się zakończyć wdrażania. Spróbuj ponownie."
     }
   },
 
