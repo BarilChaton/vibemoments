@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { MdAccessTime, MdDone, MdDoneAll, MdErrorOutline } from 'react-icons/md'
 import { formatMessageTime, renderMessageBody } from '../../utils/conversationMessages.jsx'
 import GifMessage from './gifMessage.jsx'
 
@@ -7,12 +8,68 @@ const MessageList = ({
   messagesLoading,
   messagesError,
   userId,
+  otherUserReadAt,
   scrollContainerRef,
   messagesContentRef,
   messagesEndRef,
-  onMediaLoad
+  onMediaLoad,
+  onRetry
 }) => {
   const { t } = useTranslation()
+
+  const getDeliveryStatus = (item) => {
+    if (item.sender_id !== userId) return null
+
+    if (item.delivery_status === 'sending') {
+      return 'sending'
+    }
+
+    if (item.delivery_status === 'failed') {
+      return 'failed'
+    }
+
+    if (otherUserReadAt && item.created_at) {
+      const messageTime = new Date(item.created_at).getTime()
+      const readTime = new Date(otherUserReadAt).getTime()
+
+      if (messageTime <= readTime) {
+        return 'read'
+      }
+    }
+
+    return 'sent'
+  }
+
+  const renderDeliveryStatus = (item) => {
+    const status = getDeliveryStatus(item)
+
+    if (status === 'sending') {
+      return <MdAccessTime className="text-[13px] text-vibe-muted" title={t('conversation.messages.status.sending')} />
+    }
+
+    if (status === 'sent') {
+      return <MdDone className="text-[14px] text-vibe-muted" title={t('conversation.messages.status.sent')} />
+    }
+
+    if (status === 'read') {
+      return <MdDoneAll className="text-[15px] text-vibe-petrol" title={t('conversation.messages.status.read')} />
+    }
+
+    if (status === 'failed') {
+      return (
+        <button
+          className="flex size-5 items-center justify-center rounded-full text-red-500 transition active:scale-90"
+          type="button"
+          title={t('conversation.messages.status.retry')}
+          aria-label={t('conversation.messages.status.retry')}
+          onClick={() => onRetry?.(item)}>
+          <MdErrorOutline className="text-[15px]" />
+        </button>
+      )
+    }
+
+    return null
+  }
 
   return (
     <div ref={scrollContainerRef} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-5 pt-7">
@@ -57,7 +114,11 @@ const MessageList = ({
                     </div>
                   )}
 
-                  <span className="mt-1 px-1 text-[10px] text-vibe-muted">{formatMessageTime(item.created_at)}</span>
+                  <div className="mt-1 flex items-center gap-1 px-1 text-[10px] text-vibe-muted">
+                    <span>{formatMessageTime(item.created_at)}</span>
+
+                    {mine && renderDeliveryStatus(item)}
+                  </div>
                 </div>
               </div>
             )

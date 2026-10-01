@@ -240,7 +240,14 @@
       "emptyTitle": "Rozmowa odblokowana",
       "emptyDescription": "Połączyliście się przez Vibe. Wasze wiadomości pojawią się tutaj.",
       "sendError": "Nie udało się wysłać wiadomości.",
-      "gifSendError": "Nie udało się wysłać GIF-a."
+      "gifSendError": "Nie udało się wysłać GIF-a.",
+      "status": {
+        "sending": "Wysyłanie",
+        "sent": "Wysłano",
+        "read": "Przeczytano",
+        "failed": "Nie udało się wysłać",
+        "retry": "Spróbuj wysłać ponownie"
+      }
     },
 
     "typing": "{{name}} pisze...",

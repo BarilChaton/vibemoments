@@ -353,6 +353,55 @@ export const getTotalUnreadCount = async () => {
   return (data || []).reduce((total, conversation) => total + Number(conversation.unread_count || 0), 0)
 }
 
+export const getOtherUserReadState = async (conversationId, otherUserId) => {
+  if (!conversationId || !otherUserId) return null
+
+  const { data, error } = await supabase
+    .from('conversation_reads')
+    .select('conversation_id, user_id, last_read_at')
+    .eq('conversation_id', conversationId)
+    .eq('user_id', otherUserId)
+    .maybeSingle()
+
+  if (error) throw error
+
+  return data
+}
+
+export const subscribeToConversationReadState = (conversationId, otherUserId, onReadStateChange) => {
+  if (!conversationId || !otherUserId) return null
+
+  const channel = supabase.channel(`conversation-read:${conversationId}:${otherUserId}:${crypto.randomUUID()}`)
+
+  channel.on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'conversation_reads',
+      filter: `conversation_id=eq.${conversationId}`
+    },
+    (payload) => {
+      const row = payload.new
+
+      if (!row) return
+      if (row.user_id !== otherUserId) return
+
+      onReadStateChange(row)
+    }
+  )
+
+  channel.subscribe()
+
+  return channel
+}
+
+export const unsubscribeFromConversationReadState = async (channel) => {
+  if (!channel) return
+
+  await supabase.removeChannel(channel)
+}
+
 // -----------------------------------------------------------------------------
 // Typing realtime
 // -----------------------------------------------------------------------------

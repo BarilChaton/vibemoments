@@ -240,7 +240,14 @@
       "emptyTitle": "Konversationen är upplåst",
       "emptyDescription": "Ni fick kontakt genom en Vibe. Era meddelanden visas här.",
       "sendError": "Det gick inte att skicka ditt meddelande.",
-      "gifSendError": "Det gick inte att skicka GIF:en."
+      "gifSendError": "Det gick inte att skicka GIF:en.",
+      "status": {
+        "sending": "Skickar",
+        "sent": "Skickat",
+        "read": "Läst",
+        "failed": "Misslyckades",
+        "retry": "Försök skicka igen"
+      }
     },
 
     "typing": "{{name}} skriver...",

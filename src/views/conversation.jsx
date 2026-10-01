@@ -6,13 +6,16 @@ import { FiArrowLeft } from 'react-icons/fi'
 import {
   getConversation,
   getConversationMessages,
+  getOtherUserReadState,
   markConversationAsRead,
   sendConversationTyping,
   sendGifMessage,
   sendMessage,
   subscribeToConversationMessages,
+  subscribeToConversationReadState,
   subscribeToConversationTyping,
   unsubscribeFromConversationMessages,
+  unsubscribeFromConversationReadState,
   unsubscribeFromConversationTyping
 } from '../services/connections.js'
 import { getFriendshipState, respondToFriendRequest, sendFriendRequest } from '../services/friends.js'
@@ -36,20 +39,18 @@ const Conversation = ({ conversationId, onBack }) => {
   const messagesScrollRef = useRef(null)
   const messagesContentRef = useRef(null)
   const inputRef = useRef(null)
-
   const initialScrollDoneRef = useRef(false)
   const previousMessageCountRef = useRef(0)
-
   const typingChannelRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const remoteTypingTimeoutRef = useRef(null)
   const typingRef = useRef(false)
+  const pendingMessageIdRef = useRef(null)
 
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [otherUserTyping, setOtherUserTyping] = useState(false)
-
   const [friendActionLoading, setFriendActionLoading] = useState(false)
   const [friendError, setFriendError] = useState('')
 
@@ -82,6 +83,21 @@ const Conversation = ({ conversationId, onBack }) => {
     enabled: Boolean(conversationId),
     staleTime: Infinity
   })
+
+  // ---------------------------------------------------------------------------
+  // Other-user read state
+  // ---------------------------------------------------------------------------
+
+  const otherUserId = conversation?.otherUser?.id
+
+  const { data: otherUserReadState = null } = useQuery({
+    queryKey: ['conversation-read-state', conversationId, otherUserId],
+    queryFn: () => getOtherUserReadState(conversationId, otherUserId),
+    enabled: Boolean(conversationId && otherUserId),
+    staleTime: Infinity
+  })
+
+  const otherUserReadAt = otherUserReadState?.last_read_at || null
 
   // ---------------------------------------------------------------------------
   // Friendship state
@@ -144,6 +160,22 @@ const Conversation = ({ conversationId, onBack }) => {
 
     markRead()
   }, [conversationId, queryClient])
+
+  // ---------------------------------------------------------------------------
+  // Realtime read state
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!conversationId || !otherUserId) return
+
+    const channel = subscribeToConversationReadState(conversationId, otherUserId, (readState) => {
+      queryClient.setQueryData(['conversation-read-state', conversationId, otherUserId], readState)
+    })
+
+    return () => {
+      unsubscribeFromConversationReadState(channel)
+    }
+  }, [conversationId, otherUserId, queryClient])
 
   // ---------------------------------------------------------------------------
   // App resume
@@ -210,11 +242,81 @@ const Conversation = ({ conversationId, onBack }) => {
   // Send message
   // ---------------------------------------------------------------------------
 
+  const replaceOptimisticMessage = (localId, serverMessage) => {
+    queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => {
+      const replaced = current.map((item) => {
+        if (item.id !== localId) return item
+
+        return {
+          ...serverMessage,
+          delivery_status: 'sent'
+        }
+      })
+
+      const seen = new Set()
+
+      return replaced.filter((item) => {
+        if (seen.has(item.id)) return false
+
+        seen.add(item.id)
+        return true
+      })
+    })
+  }
+
+  const markOptimisticMessageFailed = (localId) => {
+    queryClient.setQueryData(['conversation-messages', conversationId], (current = []) =>
+      current.map((item) =>
+        item.id === localId
+          ? {
+              ...item,
+              delivery_status: 'failed'
+            }
+          : item
+      )
+    )
+  }
+
+  const markOptimisticMessageSending = (localId) => {
+    queryClient.setQueryData(['conversation-messages', conversationId], (current = []) =>
+      current.map((item) =>
+        item.id === localId
+          ? {
+              ...item,
+              delivery_status: 'sending'
+            }
+          : item
+      )
+    )
+  }
+
   const handleSend = async () => {
     const trimmed = message.trim()
 
     if (!trimmed || sending || !conversationId || !user) return
 
+    const localId = `local-${crypto.randomUUID()}`
+
+    const optimisticMessage = {
+      id: localId,
+      conversation_id: conversationId,
+      sender_id: user.id,
+      body: trimmed,
+      created_at: new Date().toISOString(),
+      message_type: 'text',
+      media_url: null,
+      media_preview_url: null,
+      media_provider: null,
+      media_id: null,
+      delivery_status: 'sending',
+      local: true
+    }
+
+    pendingMessageIdRef.current = localId
+
+    queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => [...current, optimisticMessage])
+
+    setMessage('')
     setSending(true)
     setError('')
 
@@ -237,13 +339,11 @@ const Conversation = ({ conversationId, onBack }) => {
         message: trimmed
       })
 
-      setMessage('')
+      replaceOptimisticMessage(localId, newMessage)
 
-      queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => {
-        if (current.some((item) => item.id === newMessage.id)) return current
-
-        return [...current, newMessage]
-      })
+      if (pendingMessageIdRef.current === localId) {
+        pendingMessageIdRef.current = null
+      }
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -264,7 +364,71 @@ const Conversation = ({ conversationId, onBack }) => {
       })
     } catch (sendError) {
       console.error('Failed to send message:', sendError)
-      setError(t('conversation.messages.sendError'))
+
+      markOptimisticMessageFailed(localId)
+
+      if (pendingMessageIdRef.current === localId) {
+        pendingMessageIdRef.current = null
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleRetryMessage = async (failedMessage) => {
+    if (!failedMessage || sending || !conversationId || !user) return
+
+    const localId = failedMessage.id
+
+    markOptimisticMessageSending(localId)
+
+    pendingMessageIdRef.current = localId
+    setSending(true)
+    setError('')
+
+    try {
+      let newMessage
+
+      if (failedMessage.message_type === 'gif') {
+        newMessage = await sendGifMessage({
+          conversationId,
+          gif: {
+            id: failedMessage.media_id,
+            url: failedMessage.media_url,
+            previewUrl: failedMessage.media_preview_url,
+            provider: failedMessage.media_provider
+          }
+        })
+      } else {
+        newMessage = await sendMessage({
+          conversationId,
+          message: failedMessage.body
+        })
+      }
+
+      replaceOptimisticMessage(localId, newMessage)
+
+      if (pendingMessageIdRef.current === localId) {
+        pendingMessageIdRef.current = null
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['conversations']
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['friendship-state', conversationId]
+        })
+      ])
+    } catch (retryError) {
+      console.error('Failed to retry message:', retryError)
+
+      markOptimisticMessageFailed(localId)
+
+      if (pendingMessageIdRef.current === localId) {
+        pendingMessageIdRef.current = null
+      }
     } finally {
       setSending(false)
     }
@@ -284,6 +448,27 @@ const Conversation = ({ conversationId, onBack }) => {
   const handleSendGif = async (gif) => {
     if (!conversationId || !user || sending) return
 
+    const localId = `local-${crypto.randomUUID()}`
+
+    const optimisticMessage = {
+      id: localId,
+      conversation_id: conversationId,
+      sender_id: user.id,
+      body: null,
+      created_at: new Date().toISOString(),
+      message_type: 'gif',
+      media_url: gif.url,
+      media_preview_url: gif.previewUrl || gif.url,
+      media_provider: gif.provider || 'klipy',
+      media_id: String(gif.id),
+      delivery_status: 'sending',
+      local: true
+    }
+
+    pendingMessageIdRef.current = localId
+
+    queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => [...current, optimisticMessage])
+
     setSending(true)
     setError('')
 
@@ -293,11 +478,11 @@ const Conversation = ({ conversationId, onBack }) => {
         gif
       })
 
-      queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => {
-        if (current.some((item) => item.id === newMessage.id)) return current
+      replaceOptimisticMessage(localId, newMessage)
 
-        return [...current, newMessage]
-      })
+      if (pendingMessageIdRef.current === localId) {
+        pendingMessageIdRef.current = null
+      }
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -314,7 +499,12 @@ const Conversation = ({ conversationId, onBack }) => {
       ])
     } catch (gifError) {
       console.error('Failed to send GIF:', gifError)
-      setError(t('conversation.messages.gifSendError'))
+
+      markOptimisticMessageFailed(localId)
+
+      if (pendingMessageIdRef.current === localId) {
+        pendingMessageIdRef.current = null
+      }
     } finally {
       setSending(false)
     }
@@ -704,10 +894,12 @@ const Conversation = ({ conversationId, onBack }) => {
         messagesLoading={messagesLoading}
         messagesError={messagesError}
         userId={user?.id}
+        otherUserReadAt={otherUserReadAt}
         scrollContainerRef={messagesScrollRef}
         messagesContentRef={messagesContentRef}
         messagesEndRef={messagesEndRef}
         onMediaLoad={handleMessageMediaLoad}
+        onRetry={handleRetryMessage}
       />
 
       <TypingIndicator visible={otherUserTyping} displayName={otherUser?.display_name} />

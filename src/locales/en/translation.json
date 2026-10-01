@@ -240,7 +240,14 @@
       "emptyTitle": "Conversation unlocked",
       "emptyDescription": "You connected through a Vibe. Messages between you will appear here.",
       "sendError": "Could not send your message.",
-      "gifSendError": "Could not send the GIF."
+      "gifSendError": "Could not send the GIF.",
+      "status": {
+        "sending": "Sending",
+        "sent": "Sent",
+        "read": "Read",
+        "failed": "Failed",
+        "retry": "Retry sending"
+      }
     },
 
     "typing": "{{name}} is typing...",
