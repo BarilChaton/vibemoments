@@ -88,14 +88,17 @@ const CreateVibe = ({ onPublished, onCameraOpenChange }) => {
 
     const setupPermissionListener = async () => {
       listener = await Camera.addCameraPermissionChangedListener((status) => {
-        if (cancelled || status.camera === 'granted') return
+        if (cancelled) return
+
+        setCameraPermissionStatus(status.camera)
+
+        if (status.camera === 'granted') return
 
         setCameraOpen(false)
         setCaptureSession(null)
         setCaptureDeviceId(null)
         setCaptureSessionUpdating(false)
         setCaptureMode('photo')
-        setError(t('errors.camera.permissionRequired'))
       })
     }
 

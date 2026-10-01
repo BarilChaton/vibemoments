@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Capacitor } from '@capacitor/core'
-import { App as CapacitorApp } from '@capacitor/app'
 import { registerPushNotifications } from './services/notifications.js'
-import { checkAppPermissions } from './services/permissions.js'
 import useAuthStore from './stores/useAuthStore.js'
 import AuthScreen from './components/auth/authScreen.jsx'
 import Onboarding from './components/onboarding/onboarding.jsx'
@@ -23,45 +20,6 @@ const App = () => {
   const [activeView, setActiveView] = useState('home')
   const [conversationToOpen, setConversationToOpen] = useState(null)
   const [cameraOpen, setCameraOpen] = useState(false)
-
-  // ---------------------------------------------------------------------------
-  // Permission status
-  // ---------------------------------------------------------------------------
-
-  useEffect(() => {
-    if (!initialized || !user?.id || !profile?.onboarding_completed) return
-    if (!Capacitor.isNativePlatform()) return
-
-    let cancelled = false
-    let appStateListener = null
-
-    const refreshPermissions = async () => {
-      try {
-        await checkAppPermissions()
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Failed to refresh app permissions:', error)
-        }
-      }
-    }
-
-    const setupListener = async () => {
-      await refreshPermissions()
-
-      appStateListener = await CapacitorApp.addListener('appStateChange', ({ isActive }) => {
-        if (isActive) {
-          refreshPermissions()
-        }
-      })
-    }
-
-    setupListener()
-
-    return () => {
-      cancelled = true
-      appStateListener?.remove()
-    }
-  }, [initialized, user?.id, profile?.onboarding_completed])
 
   // ---------------------------------------------------------------------------
   // Push notifications
