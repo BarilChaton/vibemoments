@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { App } from '@capacitor/app'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -8,13 +8,16 @@ import {
   getConversationMessages,
   getOtherUserReadState,
   markConversationAsRead,
+  sendConversationReadReceipt,
   sendConversationTyping,
   sendGifMessage,
   sendMessage,
   subscribeToConversationMessages,
+  subscribeToConversationReadReceipts,
   subscribeToConversationReadState,
   subscribeToConversationTyping,
   unsubscribeFromConversationMessages,
+  unsubscribeFromConversationReadReceipts,
   unsubscribeFromConversationReadState,
   unsubscribeFromConversationTyping
 } from '../services/connections.js'
@@ -32,6 +35,8 @@ const MAX_MESSAGE_LENGTH = 1000
 const Conversation = ({ conversationId, onBack }) => {
   const { t } = useTranslation()
   const { user } = useAuthStore()
+  const userId = user?.id
+
   const { setActiveConversationId } = useChatStore()
   const queryClient = useQueryClient()
 
@@ -45,7 +50,8 @@ const Conversation = ({ conversationId, onBack }) => {
   const typingTimeoutRef = useRef(null)
   const remoteTypingTimeoutRef = useRef(null)
   const typingRef = useRef(false)
-  const pendingMessageIdRef = useRef(null)
+  const readReceiptChannelRef = useRef(null)
+  const lastReadMarkedAtRef = useRef(null)
 
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -53,6 +59,20 @@ const Conversation = ({ conversationId, onBack }) => {
   const [otherUserTyping, setOtherUserTyping] = useState(false)
   const [friendActionLoading, setFriendActionLoading] = useState(false)
   const [friendError, setFriendError] = useState('')
+
+  const markReadAndBroadcast = useCallback(
+    async (readAt) => {
+      if (!conversationId || !userId || !readAt) return
+
+      await markConversationAsRead(conversationId, readAt)
+
+      await sendConversationReadReceipt(readReceiptChannelRef.current, {
+        userId,
+        readAt
+      })
+    },
+    [conversationId, userId]
+  )
 
   // ---------------------------------------------------------------------------
   // Conversation
@@ -134,15 +154,33 @@ const Conversation = ({ conversationId, onBack }) => {
   }, [conversationId, setActiveConversationId])
 
   // ---------------------------------------------------------------------------
-  // Mark as read
+  // Mark incoming messages as read
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (!conversationId) return
+    if (!conversationId || !userId || messagesLoading || !messages.length) return
+
+    let latestIncomingMessage = null
+
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index].sender_id !== userId) {
+        latestIncomingMessage = messages[index]
+        break
+      }
+    }
+
+    if (!latestIncomingMessage?.created_at) return
+    if (lastReadMarkedAtRef.current === latestIncomingMessage.created_at) return
+
+    let cancelled = false
 
     const markRead = async () => {
       try {
-        await markConversationAsRead(conversationId)
+        await markReadAndBroadcast(latestIncomingMessage.created_at)
+
+        if (cancelled) return
+
+        lastReadMarkedAtRef.current = latestIncomingMessage.created_at
 
         await Promise.all([
           queryClient.invalidateQueries({
@@ -154,15 +192,51 @@ const Conversation = ({ conversationId, onBack }) => {
           })
         ])
       } catch (readError) {
-        console.error('Failed to mark conversation as read:', readError)
+        if (!cancelled) {
+          console.error('Failed to mark conversation as read:', readError)
+        }
       }
     }
 
     markRead()
-  }, [conversationId, queryClient])
+
+    return () => {
+      cancelled = true
+    }
+  }, [conversationId, markReadAndBroadcast, messages, messagesLoading, queryClient, userId])
 
   // ---------------------------------------------------------------------------
-  // Realtime read state
+  // Realtime read receipts
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!conversationId || !userId || !otherUserId) return
+
+    const channel = subscribeToConversationReadReceipts(conversationId, (payload) => {
+      if (!payload?.userId || payload.userId !== otherUserId) return
+      if (!payload.readAt) return
+
+      queryClient.setQueryData(['conversation-read-state', conversationId, otherUserId], (current) => ({
+        ...(current || {}),
+        conversation_id: conversationId,
+        user_id: otherUserId,
+        last_read_at: payload.readAt
+      }))
+    })
+
+    readReceiptChannelRef.current = channel
+
+    return () => {
+      unsubscribeFromConversationReadReceipts(channel)
+
+      if (readReceiptChannelRef.current === channel) {
+        readReceiptChannelRef.current = null
+      }
+    }
+  }, [conversationId, otherUserId, queryClient, userId])
+
+  // ---------------------------------------------------------------------------
+  // Persisted read-state fallback
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
@@ -186,15 +260,13 @@ const Conversation = ({ conversationId, onBack }) => {
 
     const refreshConversation = async () => {
       try {
-        await queryClient.refetchQueries({
-          queryKey: ['conversation-messages', conversationId],
-          exact: true,
-          type: 'active'
-        })
+        const refreshes = [
+          queryClient.refetchQueries({
+            queryKey: ['conversation-messages', conversationId],
+            exact: true,
+            type: 'active'
+          }),
 
-        await markConversationAsRead(conversationId)
-
-        await Promise.all([
           queryClient.invalidateQueries({
             queryKey: ['conversations']
           }),
@@ -206,7 +278,19 @@ const Conversation = ({ conversationId, onBack }) => {
           queryClient.invalidateQueries({
             queryKey: ['friendship-state', conversationId]
           })
-        ])
+        ]
+
+        if (otherUserId) {
+          refreshes.push(
+            queryClient.refetchQueries({
+              queryKey: ['conversation-read-state', conversationId, otherUserId],
+              exact: true,
+              type: 'active'
+            })
+          )
+        }
+
+        await Promise.all(refreshes)
       } catch (refreshError) {
         console.error('Failed to refresh conversation:', refreshError)
       }
@@ -236,10 +320,10 @@ const Conversation = ({ conversationId, onBack }) => {
       disposed = true
       appStateListener?.remove()
     }
-  }, [conversationId, queryClient])
+  }, [conversationId, otherUserId, queryClient])
 
   // ---------------------------------------------------------------------------
-  // Send message
+  // Optimistic messages
   // ---------------------------------------------------------------------------
 
   const replaceOptimisticMessage = (localId, serverMessage) => {
@@ -290,17 +374,21 @@ const Conversation = ({ conversationId, onBack }) => {
     )
   }
 
+  // ---------------------------------------------------------------------------
+  // Send message
+  // ---------------------------------------------------------------------------
+
   const handleSend = async () => {
     const trimmed = message.trim()
 
-    if (!trimmed || sending || !conversationId || !user) return
+    if (!trimmed || sending || !conversationId || !userId) return
 
     const localId = `local-${crypto.randomUUID()}`
 
     const optimisticMessage = {
       id: localId,
       conversation_id: conversationId,
-      sender_id: user.id,
+      sender_id: userId,
       body: trimmed,
       created_at: new Date().toISOString(),
       message_type: 'text',
@@ -311,8 +399,6 @@ const Conversation = ({ conversationId, onBack }) => {
       delivery_status: 'sending',
       local: true
     }
-
-    pendingMessageIdRef.current = localId
 
     queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => [...current, optimisticMessage])
 
@@ -329,7 +415,7 @@ const Conversation = ({ conversationId, onBack }) => {
         typingRef.current = false
 
         await sendConversationTyping(typingChannelRef.current, {
-          userId: user.id,
+          userId,
           typing: false
         })
       }
@@ -340,10 +426,6 @@ const Conversation = ({ conversationId, onBack }) => {
       })
 
       replaceOptimisticMessage(localId, newMessage)
-
-      if (pendingMessageIdRef.current === localId) {
-        pendingMessageIdRef.current = null
-      }
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -366,23 +448,21 @@ const Conversation = ({ conversationId, onBack }) => {
       console.error('Failed to send message:', sendError)
 
       markOptimisticMessageFailed(localId)
-
-      if (pendingMessageIdRef.current === localId) {
-        pendingMessageIdRef.current = null
-      }
     } finally {
       setSending(false)
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Retry message
+  // ---------------------------------------------------------------------------
+
   const handleRetryMessage = async (failedMessage) => {
-    if (!failedMessage || sending || !conversationId || !user) return
+    if (!failedMessage || sending || !conversationId || !userId) return
 
     const localId = failedMessage.id
 
     markOptimisticMessageSending(localId)
-
-    pendingMessageIdRef.current = localId
     setSending(true)
     setError('')
 
@@ -408,13 +488,13 @@ const Conversation = ({ conversationId, onBack }) => {
 
       replaceOptimisticMessage(localId, newMessage)
 
-      if (pendingMessageIdRef.current === localId) {
-        pendingMessageIdRef.current = null
-      }
-
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['conversations']
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['total-unread-messages']
         }),
 
         queryClient.invalidateQueries({
@@ -425,10 +505,6 @@ const Conversation = ({ conversationId, onBack }) => {
       console.error('Failed to retry message:', retryError)
 
       markOptimisticMessageFailed(localId)
-
-      if (pendingMessageIdRef.current === localId) {
-        pendingMessageIdRef.current = null
-      }
     } finally {
       setSending(false)
     }
@@ -446,14 +522,14 @@ const Conversation = ({ conversationId, onBack }) => {
   // ---------------------------------------------------------------------------
 
   const handleSendGif = async (gif) => {
-    if (!conversationId || !user || sending) return
+    if (!conversationId || !userId || sending) return
 
     const localId = `local-${crypto.randomUUID()}`
 
     const optimisticMessage = {
       id: localId,
       conversation_id: conversationId,
-      sender_id: user.id,
+      sender_id: userId,
       body: null,
       created_at: new Date().toISOString(),
       message_type: 'gif',
@@ -464,8 +540,6 @@ const Conversation = ({ conversationId, onBack }) => {
       delivery_status: 'sending',
       local: true
     }
-
-    pendingMessageIdRef.current = localId
 
     queryClient.setQueryData(['conversation-messages', conversationId], (current = []) => [...current, optimisticMessage])
 
@@ -479,10 +553,6 @@ const Conversation = ({ conversationId, onBack }) => {
       })
 
       replaceOptimisticMessage(localId, newMessage)
-
-      if (pendingMessageIdRef.current === localId) {
-        pendingMessageIdRef.current = null
-      }
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -501,10 +571,6 @@ const Conversation = ({ conversationId, onBack }) => {
       console.error('Failed to send GIF:', gifError)
 
       markOptimisticMessageFailed(localId)
-
-      if (pendingMessageIdRef.current === localId) {
-        pendingMessageIdRef.current = null
-      }
     } finally {
       setSending(false)
     }
@@ -518,7 +584,7 @@ const Conversation = ({ conversationId, onBack }) => {
     setMessage(value)
     setError('')
 
-    if (!user?.id || !typingChannelRef.current) return
+    if (!userId || !typingChannelRef.current) return
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
@@ -529,7 +595,7 @@ const Conversation = ({ conversationId, onBack }) => {
         typingRef.current = true
 
         sendConversationTyping(typingChannelRef.current, {
-          userId: user.id,
+          userId,
           typing: true
         })
       }
@@ -538,7 +604,7 @@ const Conversation = ({ conversationId, onBack }) => {
         typingRef.current = false
 
         sendConversationTyping(typingChannelRef.current, {
-          userId: user.id,
+          userId,
           typing: false
         })
       }, 1200)
@@ -546,7 +612,7 @@ const Conversation = ({ conversationId, onBack }) => {
       typingRef.current = false
 
       sendConversationTyping(typingChannelRef.current, {
-        userId: user.id,
+        userId,
         typing: false
       })
     }
@@ -626,40 +692,22 @@ const Conversation = ({ conversationId, onBack }) => {
       await queryClient.invalidateQueries({
         queryKey: ['friendship-state', conversationId]
       })
-
-      if (newMessage.sender_id !== user?.id) {
-        try {
-          await markConversationAsRead(conversationId)
-
-          await Promise.all([
-            queryClient.invalidateQueries({
-              queryKey: ['conversations']
-            }),
-
-            queryClient.invalidateQueries({
-              queryKey: ['total-unread-messages']
-            })
-          ])
-        } catch (readError) {
-          console.error('Failed to update read state:', readError)
-        }
-      }
     })
 
     return () => {
       unsubscribeFromConversationMessages(channel)
     }
-  }, [conversationId, queryClient, user?.id])
+  }, [conversationId, queryClient])
 
   // ---------------------------------------------------------------------------
   // Realtime typing
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    if (!conversationId || !user?.id) return
+    if (!conversationId || !userId) return
 
     const channel = subscribeToConversationTyping(conversationId, (payload) => {
-      if (payload.userId === user.id) return
+      if (payload.userId === userId) return
 
       if (remoteTypingTimeoutRef.current) {
         clearTimeout(remoteTypingTimeoutRef.current)
@@ -687,7 +735,7 @@ const Conversation = ({ conversationId, onBack }) => {
 
       if (typingRef.current) {
         sendConversationTyping(channel, {
-          userId: user.id,
+          userId,
           typing: false
         })
       }
@@ -697,15 +745,16 @@ const Conversation = ({ conversationId, onBack }) => {
       typingChannelRef.current = null
       typingRef.current = false
     }
-  }, [conversationId, user?.id])
+  }, [conversationId, userId])
 
   // ---------------------------------------------------------------------------
-  // Reset message scroll
+  // Reset conversation refs
   // ---------------------------------------------------------------------------
 
   useLayoutEffect(() => {
     initialScrollDoneRef.current = false
     previousMessageCountRef.current = 0
+    lastReadMarkedAtRef.current = null
   }, [conversationId])
 
   // ---------------------------------------------------------------------------
@@ -835,6 +884,7 @@ const Conversation = ({ conversationId, onBack }) => {
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
           <div className="mx-auto size-3 animate-pulse rounded-full bg-vibe-lime" />
+
           <p className="mt-4 text-sm text-vibe-muted">{t('conversation.loading')}</p>
         </div>
       </div>
@@ -893,7 +943,7 @@ const Conversation = ({ conversationId, onBack }) => {
         messages={messages}
         messagesLoading={messagesLoading}
         messagesError={messagesError}
-        userId={user?.id}
+        userId={userId}
         otherUserReadAt={otherUserReadAt}
         scrollContainerRef={messagesScrollRef}
         messagesContentRef={messagesContentRef}

@@ -325,7 +325,37 @@ export const unsubscribeFromInboxMessages = async (channel) => {
 // Read state
 // -----------------------------------------------------------------------------
 
-export const markConversationAsRead = async (conversationId) => {
+export const subscribeToConversationReadReceipts = (conversationId, onReadReceipt) => {
+  if (!conversationId) return null
+
+  return supabase
+    .channel(`conversation-read-receipts:${conversationId}:${crypto.randomUUID()}`)
+    .on('broadcast', { event: 'read' }, ({ payload }) => {
+      onReadReceipt(payload)
+    })
+    .subscribe()
+}
+
+export const sendConversationReadReceipt = async (channel, { userId, readAt }) => {
+  if (!channel || !userId || !readAt) return
+
+  await channel.send({
+    type: 'broadcast',
+    event: 'read',
+    payload: {
+      userId,
+      readAt
+    }
+  })
+}
+
+export const unsubscribeFromConversationReadReceipts = async (channel) => {
+  if (!channel) return
+
+  await supabase.removeChannel(channel)
+}
+
+export const markConversationAsRead = async (conversationId, readAt = null) => {
   const { data: authData, error: authError } = await supabase.auth.getUser()
 
   if (authError) throw authError
@@ -335,7 +365,7 @@ export const markConversationAsRead = async (conversationId) => {
     {
       conversation_id: conversationId,
       user_id: authData.user.id,
-      last_read_at: new Date().toISOString()
+      last_read_at: readAt || new Date().toISOString()
     },
     {
       onConflict: 'conversation_id,user_id'
