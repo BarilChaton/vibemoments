@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiArrowLeft, FiBell, FiCamera, FiCheck, FiMapPin, FiSettings } from 'react-icons/fi'
+import { App as CapacitorApp } from '@capacitor/app'
+import { openAppSettings } from '../../native/appSettings.js'
 import {
   checkAppPermissions,
   requestCameraPermission,
@@ -12,7 +14,7 @@ import useAuthStore from '../../stores/useAuthStore.js'
 
 const PERMISSIONS = ['location', 'camera', 'notifications']
 
-const PermissionsStep = ({ onBack }) => {
+const PermissionsStep = ({ onBack, recoveryMode = false, onComplete }) => {
   const { t } = useTranslation()
   const { user, setProfile } = useAuthStore()
 
@@ -55,6 +57,51 @@ const PermissionsStep = ({ onBack }) => {
   const CurrentIcon = currentConfig.icon
   const currentStatus = statuses[currentPermission]
 
+  const findNextMissingPermission = (currentStatuses, startIndex) => {
+    for (let index = startIndex; index < PERMISSIONS.length; index += 1) {
+      if (currentStatuses[PERMISSIONS[index]] !== 'granted') {
+        return index
+      }
+    }
+
+    return -1
+  }
+
+  const applyPermissionStatuses = useCallback(
+    (permissions) => {
+      setStatuses(permissions)
+
+      const firstMissingIndex = PERMISSIONS.findIndex((permission) => permissions[permission] !== 'granted')
+
+      if (firstMissingIndex >= 0) {
+        setCurrentIndex(firstMissingIndex)
+        return
+      }
+
+      if (recoveryMode) {
+        onComplete?.()
+        return
+      }
+
+      setCurrentIndex(PERMISSIONS.length - 1)
+    },
+    [recoveryMode, onComplete]
+  )
+
+  // ---------------------------------------------------------------------------
+  // Open Android settings
+  // ---------------------------------------------------------------------------
+
+  const handleOpenSettings = async () => {
+    setError('')
+
+    const opened = await openAppSettings()
+
+    if (!opened) {
+      setError(t('onboarding.permissions.settings.openError'))
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Initial permission check
   // ---------------------------------------------------------------------------
@@ -68,15 +115,7 @@ const PermissionsStep = ({ onBack }) => {
 
         if (cancelled) return
 
-        setStatuses(permissions)
-
-        const firstMissingIndex = PERMISSIONS.findIndex((permission) => permissions[permission] !== 'granted')
-
-        if (firstMissingIndex >= 0) {
-          setCurrentIndex(firstMissingIndex)
-        } else {
-          setCurrentIndex(PERMISSIONS.length - 1)
-        }
+        applyPermissionStatuses(permissions)
       } catch (permissionError) {
         console.error('Failed to check onboarding permissions:', permissionError)
 
@@ -95,7 +134,43 @@ const PermissionsStep = ({ onBack }) => {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [applyPermissionStatuses, onComplete, recoveryMode, t])
+
+  // ---------------------------------------------------------------------------
+  // Re-check permissions after returning from Android settings
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    let cancelled = false
+    let listener = null
+
+    const refreshPermissions = async () => {
+      try {
+        const permissions = await checkAppPermissions()
+
+        if (cancelled) return
+
+        applyPermissionStatuses(permissions)
+      } catch (permissionError) {
+        console.error('Failed to refresh permissions:', permissionError)
+      }
+    }
+
+    const setupListener = async () => {
+      listener = await CapacitorApp.addListener('appStateChange', async ({ isActive }) => {
+        if (!isActive) return
+
+        await refreshPermissions()
+      })
+    }
+
+    setupListener()
+
+    return () => {
+      cancelled = true
+      listener?.remove()
+    }
+  }, [applyPermissionStatuses, onComplete, recoveryMode])
 
   // ---------------------------------------------------------------------------
   // Request current permission
@@ -156,19 +231,26 @@ const PermissionsStep = ({ onBack }) => {
   const handleContinue = async () => {
     setError('')
 
-    if (currentIndex < PERMISSIONS.length - 1) {
-      setCurrentIndex((current) => current + 1)
+    const nextMissingIndex = findNextMissingPermission(statuses, currentIndex + 1)
+
+    if (nextMissingIndex >= 0) {
+      setCurrentIndex(nextMissingIndex)
       return
     }
 
     setFinishing(true)
 
     try {
+      if (recoveryMode) {
+        onComplete?.()
+        return
+      }
+
       const profile = await completeOnboarding(user.id)
 
       setProfile(profile)
     } catch (completeError) {
-      console.error('Failed to complete onboarding:', completeError)
+      console.error('Failed to complete permission setup:', completeError)
 
       setError(t('onboarding.permissions.completeError'))
     } finally {
@@ -209,13 +291,15 @@ const PermissionsStep = ({ onBack }) => {
 
   return (
     <div className="flex flex-1 flex-col">
-      <button
-        className="mb-6 flex w-fit items-center gap-2 text-sm font-medium text-vibe-muted transition hover:text-vibe-petrol active:opacity-50"
-        type="button"
-        onClick={onBack}>
-        <FiArrowLeft />
-        {t('common.back')}
-      </button>
+      {!recoveryMode && (
+        <button
+          className="mb-6 flex w-fit items-center gap-2 text-sm font-medium text-vibe-muted transition hover:text-vibe-petrol active:opacity-50"
+          type="button"
+          onClick={onBack}>
+          <FiArrowLeft />
+          {t('common.back')}
+        </button>
+      )}
 
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-vibe-apricot">
@@ -248,10 +332,18 @@ const PermissionsStep = ({ onBack }) => {
         </div>
 
         {blocked && (
-          <div className="mt-6 max-w-sm rounded-2xl border border-vibe-apricot/20 bg-vibe-surface px-5 py-4 text-left">
+          <div className="mt-6 w-full max-w-sm rounded-2xl border border-vibe-apricot/20 bg-vibe-surface px-5 py-4 text-left">
             <p className="text-sm font-semibold text-vibe-text">{t('onboarding.permissions.settings.title')}</p>
 
             <p className="mt-2 text-sm leading-6 text-vibe-muted">{t('onboarding.permissions.settings.description')}</p>
+
+            <button
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-vibe-petrol px-4 py-3 text-sm font-bold text-vibe-surface transition active:scale-[0.98]"
+              type="button"
+              onClick={handleOpenSettings}>
+              <FiSettings />
+              {t('onboarding.permissions.settings.open')}
+            </button>
           </div>
         )}
 

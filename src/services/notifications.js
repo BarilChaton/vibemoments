@@ -64,10 +64,10 @@ export const registerPushNotifications = async (userId) => {
   try {
     await registerPushListeners()
 
-    let permission = await PushNotifications.checkPermissions()
+    const permission = await PushNotifications.checkPermissions()
 
     if (permission.receive !== 'granted') {
-      permission = await PushNotifications.requestPermissions()
+      return false
     }
 
     if (permission.receive !== 'granted') {

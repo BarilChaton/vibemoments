@@ -108,7 +108,9 @@
 
       "settings": {
         "title": "To uprawnienie trzeba zmienić w ustawieniach Androida",
-        "description": "Nie można już poprosić o to uprawnienie bezpośrednio. Otwórz ustawienia Androida, znajdź VibeMoments, przejdź do sekcji Uprawnienia i włącz je tam."
+        "description": "Nie można już poprosić o to uprawnienie bezpośrednio. Otwórz ustawienia Androida, znajdź VibeMoments, przejdź do sekcji Uprawnienia i włącz je tam.",
+        "open": "Otwórz ustawienia",
+        "openError": "Nie udało się otworzyć ustawień Androida. Otwórz ustawienia aplikacji VibeMoments ręcznie."
       },
 
       "checking": "Sprawdzanie uprawnień...",
@@ -266,7 +268,11 @@
       "cameraDescription": "Zrób zdjęcie lub nagraj film",
       "photo": "Zdjęcie",
       "videoMaximum": "Do {{seconds}} sekund",
-      "explanation": "Uchwyć to, co dzieje się wokół Ciebie właśnie teraz, i podziel się tym z osobami w pobliżu."
+      "explanation": "Uchwyć to, co dzieje się wokół Ciebie właśnie teraz, i podziel się tym z osobami w pobliżu.",
+      "permissionBlockedTitle": "Dostęp do aparatu jest wyłączony",
+      "permissionBlockedDescription": "Włącz dostęp do aparatu dla VibeMoments w ustawieniach Androida, aby robić zdjęcia i nagrywać filmy.",
+      "permissionRequiredDescription": "Dostęp do aparatu jest wymagany, zanim będzie można utworzyć Vibe.",
+      "openSettings": "Otwórz ustawienia"
     },
 
     "camera": {

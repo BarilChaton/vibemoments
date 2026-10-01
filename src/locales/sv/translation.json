@@ -108,7 +108,9 @@
 
       "settings": {
         "title": "Behörigheten måste ändras i Android-inställningarna",
-        "description": "Den här behörigheten kan inte längre begäras direkt. Öppna Android-inställningarna, hitta VibeMoments, gå till Behörigheter och aktivera den där."
+        "description": "Den här behörigheten kan inte längre begäras direkt. Öppna Android-inställningarna, hitta VibeMoments, gå till Behörigheter och aktivera den där.",
+        "open": "Öppna inställningar",
+        "openError": "Det gick inte att öppna Android-inställningarna. Öppna VibeMoments appinställningar manuellt."
       },
 
       "checking": "Kontrollerar behörigheter...",
@@ -266,7 +268,11 @@
       "cameraDescription": "Ta ett foto eller spela in en video",
       "photo": "Foto",
       "videoMaximum": "Upp till {{seconds}} sekunder",
-      "explanation": "Fånga vad som händer omkring dig just nu och dela det med personer i närheten."
+      "explanation": "Fånga vad som händer omkring dig just nu och dela det med personer i närheten.",
+      "permissionBlockedTitle": "Kameraåtkomst är avstängd",
+      "permissionBlockedDescription": "Aktivera kameraåtkomst för VibeMoments i Android-inställningarna för att ta foton och spela in videor.",
+      "permissionRequiredDescription": "Kameraåtkomst krävs innan du kan skapa en Vibe.",
+      "openSettings": "Öppna inställningar"
     },
 
     "camera": {
